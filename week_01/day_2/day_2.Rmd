@@ -1,0 +1,83 @@
+---
+title: "Homework Day 2 - Emma M"
+output: html_notebook
+---
+
+Load packages
+```{r}
+library(tidyverse)
+library(CodeClanData)
+```
+
+## Question 1: Load in the dataset and have a look at it. What are the dimensions, variable types, variable names, etc.?
+
+```{r}
+View(drinks_content)
+dim(drinks_content) #what size is the dataset?
+names(drinks_content) # what are the columns?
+glimpse(drinks_content) #data types, headings, etc.
+tail(drinks_content, 10) #last 10 entries
+class(drinks_content)
+unique(drinks_content$Beverage_category) #what are all the beverage categories?
+```
+
+## Question 2: Let’s first investigate the calories of different drinks. Select the variables Beverage_category, Beverage, Beverage prep and Calories from your data. Since we are interested in the calorie content, check if there are any NA values in the data, and drop them if there are.
+
+```{r}
+calories_analysis <- drinks_content %>% 
+  select(Beverage_category, Beverage, Beverage_prep, Calories) #filter(is.na(Calories)) returns 0 rows therefore there are no NA values to remove. If there were we could perhaps use filter(na.rm = TRUE)?
+calories_analysis
+```
+
+## Question 3: Create a new variable (column) called calorie_diff, which stores the difference between 135 calories (135 calories = 10 cubes of sugar!) and the calories in each drink. (hint: you’ll want to subtract 135 from the calories to see which drink have more or less than 10 cups of sugar).
+
+```{r}
+calories_analysis %>% 
+  mutate(calorie_diff = Calories - 135) %>% 
+  arrange(calorie_diff)
+```
+
+## Question 4: Summarise the mean number of calories in each beverage_category. Which 3 category of drinks have the most calories? Which 3 drinks have the least? Write a small summary of your findings.
+
+```{r}
+drinks_content %>% #full dataset used as no NA's are present in calories
+  group_by(Beverage_category) %>% 
+  summarise(average_calories = mean(Calories)) %>% #mean column named so that it can easily be arranged
+  arrange(average_calories)
+```
+
+Summary: Coffee, Shaken Iced Beverages, and Classic Espresso Drinks have the lowest number of calories on average. Signature Espresso Drinks, Frappuccino Blended Coffee, and Smoothies have the highest average number of calories. Coffee has a significantly lower average than any other catergory, around 110 calaroies lower than the next lowest category. 
+
+## Question 5: Let’s look at this a different way. What is the average number of calories in each Beverage_prep type?
+
+```{r}
+drinks_content %>% #full dataset used as no NA's are present in calories
+  group_by(Beverage_prep) %>% 
+  summarise(average_calories = mean(Calories)) %>% #mean column named so that it can easily be arranged
+  arrange(average_calories)
+```
+
+## Question 6: Which Beverage_prep type contains more than the average calories of all drinks?
+
+```{r}
+#average calories of all drinks
+all_drinks_average <- drinks_content %>% 
+  summarise(mean(Calories))
+
+#filter for those that have an average greater than the average of all drinks
+drinks_content %>% 
+  group_by(Beverage_prep) %>% 
+  summarise(average_calories = mean(Calories) > all_drinks_average) %>% 
+  filter(average_calories)
+```
+
+## Question 7: Which is the best type of coffee drink (and by ‘drink’ we mean the combination of Beverage_category, Beverage and Beverage_prep) to get if you’re worried about consuming too many calories?
+
+```{r}
+drinks_content %>% #full dataset used as no NA's are present in calories
+  group_by(Beverage, Beverage_category, Beverage_prep) %>% 
+  summarise(average_calories = mean(Calories)) %>% #mean column named so that it can easily be arranged
+  arrange(average_calories)
+```
+
+Answer: Tazo Tea, Tazo Tea Drinks, Grande/short/tall/venti all have 0 calories
