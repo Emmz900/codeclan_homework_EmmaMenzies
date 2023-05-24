@@ -25,7 +25,8 @@ unique(drinks_content$Beverage_category) #what are all the beverage categories?
 
 ```{r}
 calories_analysis <- drinks_content %>% 
-  select(Beverage_category, Beverage, Beverage_prep, Calories) #filter(is.na(Calories)) returns 0 rows therefore there are no NA values to remove. If there were we could perhaps use filter(na.rm = TRUE)?
+  select(Beverage_category, Beverage, Beverage_prep, Calories) #filter(is.na(Calories)) returns 0 rows therefore there are no NA values to remove. We could have used filter(!is.na(Calories)) to remove NA or drop_na()
+#could also use select(starts_with("Bev"), Calories)
 calories_analysis
 ```
 
@@ -62,13 +63,19 @@ drinks_content %>% #full dataset used as no NA's are present in calories
 ```{r}
 #average calories of all drinks
 all_drinks_average <- drinks_content %>% 
-  summarise(mean(Calories))
+  summarise(mean(Calories)) %>% 
+  pull() #should use this step to turn the data frame into a value
 
 #filter for those that have an average greater than the average of all drinks
 drinks_content %>% 
   group_by(Beverage_prep) %>% 
   summarise(average_calories = mean(Calories) > all_drinks_average) %>% 
   filter(average_calories)
+
+#alternatively: save the group_by file
+#average_bev_prep %>% 
+ # mutate(is_greater_than_avg = mean_cals >= avg_calories) %>%
+ # filter(is_greater_than_avg == TRUE)
 ```
 
 ## Question 7: Which is the best type of coffee drink (and by ‘drink’ we mean the combination of Beverage_category, Beverage and Beverage_prep) to get if you’re worried about consuming too many calories?
