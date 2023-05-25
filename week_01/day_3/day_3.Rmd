@@ -97,7 +97,7 @@ movies_imputed %>%
 
 Using the if_else function, impute anything with a budget below $100 with the median budget. Overwrite your movies_imputed so it contains the new budget values.
 ```{r}
-movies_imputed %>% 
+movies_imputed <- movies_imputed %>% 
   mutate(budget = if_else(budget < 100,
                           median(budget, na.rm = TRUE),
                           budget)
@@ -120,8 +120,8 @@ Save this into a new object called movie_budgets.
 
 ```{r}
 movie_budgets <- movies_imputed %>% 
-  mutate(budget_type = case_when(budget < 12000000 ~ "Small budget",
-                                 budget >= 12000000 & budget < 40000000 ~ "Medium budget",
+  mutate(budget_type = case_when(budget < 12000000 ~ "Small budget", #could use 12e6
+                                 budget >= 12000000 & budget < 40000000 ~ "Medium budget", # don't need the first half of this as all less than 12e6 have already been categorised
                                  budget >= 40000000 ~ "Big budget"))
 movie_budgets
 
@@ -134,3 +134,4 @@ movie_budgets %>%
 ## Question 2.
 
 Take the original dataset with all the variables. Using across and where, summarise the number of missing values, first across all columns of type character, and then across all columns of type numeric.
+
