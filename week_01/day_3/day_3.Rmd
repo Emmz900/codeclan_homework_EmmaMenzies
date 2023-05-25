@@ -16,6 +16,7 @@ movies
 names(movies)
 glimpse(movies)
 head(movies, 10)
+arrange(movies, vote_average)
 ```
 -Consider converting the budget and revenue into a more readable format such as currency.
 -Are there any differences between original_title and title?
@@ -44,7 +45,14 @@ movies_selected %>%
   summarise(missing_title = sum(is.na(title)),
             missing_runtime = sum(is.na(runtime)),
             missing_budget = sum(is.na(budget)))
+
 #there must be a shorter way of doing something to every column??
+movies_selected %>% 
+  summarise(across(
+    .cols = everything(),
+    .fns = ~sum(is.na(.x)) # ~ to repeat function across every selected column
+  ))
+
 ```
 
 
@@ -121,7 +129,8 @@ Save this into a new object called movie_budgets.
 ```{r}
 movie_budgets <- movies_imputed %>% 
   mutate(budget_type = case_when(budget < 12000000 ~ "Small budget", #could use 12e6
-                                 budget >= 12000000 & budget < 40000000 ~ "Medium budget", # don't need the first half of this as all less than 12e6 have already been categorised
+                                 #budget >= 12000000 & 
+                                 budget < 40000000 ~ "Medium budget", # don't need the first half of this as all less than 12e6 have already been categorised
                                  budget >= 40000000 ~ "Big budget"))
 movie_budgets
 
@@ -134,4 +143,19 @@ movie_budgets %>%
 ## Question 2.
 
 Take the original dataset with all the variables. Using across and where, summarise the number of missing values, first across all columns of type character, and then across all columns of type numeric.
+
+```{r}
+#character types
+movies %>% 
+  summarise(across(
+    .cols = where(is.character),
+    .fns = ~sum(is.na(.x))
+  ))
+
+#numeric types
+movies %>% 
+  summarise(across(where(is.numeric),
+    ~sum(is.na(.x))
+  ))
+```
 
