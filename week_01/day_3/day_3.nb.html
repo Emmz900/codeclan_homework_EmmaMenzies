@@ -1812,13 +1812,21 @@ a choice between original_title and title.</p>
 number of missing values in each column.</p>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-frame-begin eyJtZXRhZGF0YSI6eyJjbGFzc2VzIjpbInRibF9kZiIsInRibCIsImRhdGEuZnJhbWUiXSwibnJvdyI6MSwibmNvbCI6Mywic3VtbWFyeSI6eyJBIHRpYmJsZSI6WyIxIMOXIDMiXX19LCJyZGYiOiJINHNJQUFBQUFBQUFCbTJRd1U3RE1BeUczWFFCcmRKZ0VzL1JIdGlGQjVqMkFCTkl1NkdzRFNVaVRhWWsxVGp5NUJ0T1drc3NJb2ZVK2VyZjl1Lzk5ckNwRGhVQWxMQmdERXFPSWZDMzExMzlBa2p3VWNBQ2x2SDdqVWxQS1JOZ2xYNU1oMkoyeTIvRTNJaEJlZ3pXVTZzRVY0UHlYcG4rUGFpZzVRd2ZDYnJSQkRVUWZpQjhITHRlaHF6ODB0bHpReTNpRE93SHJ5dWVmSTVXQzA5ekVLdzZFVVR6NFZDUHIwc211YmVub0t4QkVZdnVlU1l1WEFiV280bVRkSFg3T1pxditua1RPL3l6cnVKUFhFNDkyWFd1eGVkYWQ5TDB5dEFPdUJaSHFXa2hhRGs1Yms1T21VQldrUG9tMkNBb3IycXRKcExNd2VVWFh1UGhvL1VCQUFBPSJ9 -->
-<div data-pagedtable="false">
-<script data-pagedtable-source type="application/json">
-{"columns":[{"label":["missing_title"],"name":[1],"type":["int"],"align":["right"]},{"label":["missing_runtime"],"name":[2],"type":["int"],"align":["right"]},{"label":["missing_budget"],"name":[3],"type":["int"],"align":["right"]}],"data":[{"1":"0","2":"2","3":"0"}],"options":{"columns":{"min":{},"max":[10],"total":[3]},"rows":{"min":[10],"max":[10],"total":[1]},"pages":{}}}
-  </script>
-</div>
-<!-- rnb-frame-end -->
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxubW92aWVzX3NlbGVjdGVkICU+JSBcbiAgc3VtbWFyaXNlKHN1bW1hcnkgPSBzdW0oaXMubmEoYWNyb3NzKHRpdGxlLCBidWRnZXQpKSlcbiAgICAgICAgICAgIClcblxuYGBgIn0= -->
+<pre class="r"><code>movies_selected %&gt;% 
+  summarise(summary = sum(is.na(across(title, budget)))
+            )
+</code></pre>
+<!-- rnb-source-end -->
+<!-- rnb-output-begin eyJkYXRhIjoiRXJyb3IgaW4gYHN1bW1hcmlzZSgpYDpcbuKEuSBJbiBhcmd1bWVudDogYHN1bW1hcnkgPSBzdW0oaXMubmEoYWNyb3NzKHRpdGxlLCBidWRnZXQpKSlgLlxuQ2F1c2VkIGJ5IGVycm9yOlxuISBvYmplY3QgJ2J1ZGdldCcgbm90IGZvdW5kXG5CYWNrdHJhY2U6XG4gIDEuIG1vdmllc19zZWxlY3RlZCAlPiUgLi4uXG4gMTQuIGJ1ZGdldFxuIn0= -->
+<pre><code>Error in `summarise()`:
+ℹ In argument: `summary = sum(is.na(across(title, budget)))`.
+Caused by error:
+! object &#39;budget&#39; not found
+Backtrace:
+  1. movies_selected %&gt;% ...
+ 14. budget</code></pre>
+<!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->
 </div>
