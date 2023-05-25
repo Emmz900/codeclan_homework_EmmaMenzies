@@ -10,6 +10,7 @@ After you’ve read in the data and assigned it to a variable with a useful name
 ```{r}
 library(tidyverse)
 ```
+
 ```{r}
 movies <- read_csv("data/movies.csv")
 movies
