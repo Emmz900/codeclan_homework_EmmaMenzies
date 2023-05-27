@@ -1,0 +1,170 @@
+---
+title: "Week 1 - weekend homework"
+output: html_notebook
+---
+
+# Weekend Homework
+
+First steps  
+Load necessary packages and read in books.csv. Investigate dimensions, variables, missing values - you know the drill!
+
+Up to you  
+Now it’s up to you… For this weekend homework there will be no specific tasks, just you and this dataset! Using everything you’ve learned this week, try to describe/summarise at least 5 things about this dataset - using R and the tidyverse of course! Feel free to find and use new functions if there is something that the tidyverse doesn’t offer, but do try to use this homework to apply what you have learned this week. Be prepared to share one of your findings on Monday!
+
+Remember  
+Before you submit, go through your weekend homework and make sure your code is following best practices as laid out in the coding_best_practice lesson.
+
+
+```{r}
+library(tidyverse)
+
+books <- read_csv("data/books.csv")
+```
+
+```{r}
+glimpse(books)
+View(books)
+```
+
+```{r}
+books %>% 
+  summarise(
+    across(
+    everything(), 
+    ~sum(is.na(.x))
+    )
+  )
+```
+
+There are no "NA" missing values
+
+```{r}
+books_short <- books %>% 
+  select(title:average_rating, language_code:publisher)
+
+books_short %>% 
+  arrange(average_rating)
+  
+books_short %>% 
+  arrange(ratings_count)
+```
+
+Some books have a rating figure despite having a total ratings count of 0. Where are these ratings coming from??
+
+```{r}
+books_short %>% 
+  arrange(num_pages)
+```
+
+Some books have 0 pages. This does not seem likely. '0's should be replaced with NAs if we wish to analyse book length
+
+```{r}
+books_short %>% 
+  distinct(language_code)
+```
+
+## Analysis
+
+- QUESTION 1: Most and least popular books
+MAX ANSWER
+```{r}
+books_short %>% 
+  select(title, average_rating) %>% 
+  slice_max(average_rating, n = 10) #why is n = 10 returning 22 rows? They all have a rating of 5 therefore cannot be split
+
+books_short %>% 
+  select(title, contains("rating")) %>% #the number of ratings recieved will be relevant to the average rating given
+  slice_min(average_rating, n = 10)
+```
+The min average_ratings all also have 0 ratings. A better analysis might be those with 'ratings_count' > 0 or != 0
+MIN ANSWER
+```{r}
+books_short %>% 
+  select(title, contains("rating")) %>%
+  filter(ratings_count != 0) %>% 
+  slice_min(average_rating, n = 10)
+```
+
+The lowest rating recieved is actually 1. All 0 ratings can therefore be replaced with NA
+```{r}
+books_fixed_rating <- books_short %>% 
+  mutate(average_rating =
+         if_else(ratings_count == 0,
+                 NA,
+                 average_rating))
+
+books_fixed_rating %>% 
+  arrange(average_rating)
+
+books_fixed_rating %>% 
+  summarise(no_rating = sum(is.na(average_rating)))
+```
+
+- QUESTION 2: Most and least popular authors
+
+```{r}
+books_fixed_rating %>% 
+  select(authors, contains("rating")) %>% 
+  slice_max(average_rating, n = 10)
+```
+
+Should 'NOT A BOOK' be removed from data set?
+```{r}
+books_fixed_rating %>% 
+  filter(authors == "NOT A BOOK")
+```
+These are not books, one is an audio CD for example. These should be removed, as well as 0 pages fixed
+```{r}
+books_fixed <- books_fixed_rating %>% 
+  filter(authors != "NOT A BOOK") %>% #completely remove the entries which are not actually books
+  mutate(num_pages = if_else(num_pages == 0, NA, num_pages))
+
+books_fixed %>% 
+    summarise(across(everything(), 
+    ~sum(is.na(.x))
+    )
+  )
+```
+
+ANSWER
+```{r}
+books_fixed %>% 
+  select(authors, contains("rating")) %>% 
+  slice_max(average_rating, n = 10)
+
+books_fixed %>% 
+  filter(ratings_count > 100) %>% 
+  select(authors, contains("rating"), title) %>% 
+  slice_max(average_rating, n = 10)
+```
+
+Some titles appear to be sets despite the individual books alse being included
+```{r}
+books_fixed %>% 
+  filter(str_detect(title, "Harry Potter")) %>% 
+  arrange(title)
+```
+
+There are also duplicate titles but they have different author, pages, and publishing information
+
+- QUESTION 3: Longest books / book length
+
+```{r}
+books_fixed %>% 
+  select(title, num_pages, average_rating) %>% 
+  slice_max(num_pages, n = 10)
+
+books_fixed %>% 
+  summarise(mean_num_pages = mean(num_pages, na.rm = TRUE),
+            median_num_pages = median(num_pages, na.rm = TRUE),
+            max_num_pages = max(num_pages, na.rm = TRUE),
+            min_num_pages = min(num_pages, na.rm = TRUE))
+```
+
+- Question 4: How much do books vary from the average rating and book length
+
+```{r}
+books_fixed %>% 
+  select(title, authors, num_pages, average_rating)
+```
+
