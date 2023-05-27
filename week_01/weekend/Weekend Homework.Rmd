@@ -164,7 +164,47 @@ books_fixed %>%
 - Question 4: How much do books vary from the average rating and book length
 
 ```{r}
+avg_pages <- books_fixed %>% 
+  summarise(avg_pages = mean(num_pages, na.rm = TRUE)) %>% 
+  pull()
+
+avg_rating <- books_fixed %>% 
+  summarise(avg_rating = mean(average_rating, na.rm = TRUE)) %>% 
+  pull()
+
 books_fixed %>% 
-  select(title, authors, num_pages, average_rating)
+  select(title, authors, num_pages, average_rating) %>% 
+  mutate(avg_pages_diff = num_pages - avg_pages,
+         avg_rating_diff = average_rating - avg_rating) %>% 
+  arrange(desc(avg_rating_diff))
 ```
 
+- QUESTION 5: How many books at each rating (rounded)
+
+```{r}
+books_round_ratings <- books_fixed %>% 
+  mutate(rounded_rating = round(average_rating, 0))
+
+books_round_ratings %>% 
+  group_by(rounded_rating) %>% 
+  summarise(count = n())
+```
+
+- QUESTION 6: When were the books published?
+```{r}
+books_fixed %>% 
+  select(publication_date, title) %>% 
+  arrange(desc(publication_date))
+```
+
+The books were published between 1900 and 2010
+
+- Question 7: Languages
+```{r}
+books_fixed %>% 
+  group_by(language_code) %>% 
+  summarise(total = n()) %>% 
+  arrange(desc(total))
+```
+
+English is the most popular langauge for books in this dataset.
