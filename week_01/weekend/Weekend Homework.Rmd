@@ -14,7 +14,7 @@ Now it’s up to you… For this weekend homework there will be no specific task
 Remember  
 Before you submit, go through your weekend homework and make sure your code is following best practices as laid out in the coding_best_practice lesson.
 
-
+## Step 1: Investigate the data
 ```{r}
 library(tidyverse)
 
@@ -28,19 +28,17 @@ View(books)
 
 ```{r}
 books %>% 
-  summarise(
-    across(
+  summarise(across(
     everything(), 
     ~sum(is.na(.x))
-    )
-  )
+  ))
 ```
 
 There are no "NA" missing values
 
 ```{r}
-books_short <- books %>% 
-  select(title:average_rating, language_code:publisher)
+books_short <- books %>% #removed identifiers such as ISBN
+  select(title:average_rating, language_code:publisher) 
 
 books_short %>% 
   arrange(average_rating)
@@ -56,14 +54,15 @@ books_short %>%
   arrange(num_pages)
 ```
 
-Some books have 0 pages. This does not seem likely. '0's should be replaced with NAs if we wish to analyse book length
+Some books have 0 pages. This does not seem likely. '0's should be replaced with NAs if we wish to analyse book length.
 
 ```{r}
 books_short %>% 
   distinct(language_code)
 ```
+There are 27 different language codes, English is given multiple times due to different versions (UK/US/Canada).
 
-## Analysis
+## Step 2 - Analysis
 
 - QUESTION 1: Most and least popular books
 MAX ANSWER
@@ -77,6 +76,7 @@ books_short %>%
   slice_min(average_rating, n = 10)
 ```
 The min average_ratings all also have 0 ratings. A better analysis might be those with 'ratings_count' > 0 or != 0
+
 MIN ANSWER
 ```{r}
 books_short %>% 
@@ -85,7 +85,7 @@ books_short %>%
   slice_min(average_rating, n = 10)
 ```
 
-The lowest rating recieved is actually 1. All 0 ratings can therefore be replaced with NA
+The lowest rating received is actually 1 as all rows with an average rating of 0 also have a count of 0 ratings. All 0 ratings, or 0 count ratings, can be replaced with NA.
 ```{r}
 books_fixed_rating <- books_short %>% 
   mutate(average_rating =
@@ -99,6 +99,7 @@ books_fixed_rating %>%
 books_fixed_rating %>% 
   summarise(no_rating = sum(is.na(average_rating)))
 ```
+This has successfully removed 80 ratings which had a count of 0.
 
 - QUESTION 2: Most and least popular authors
 
@@ -108,16 +109,16 @@ books_fixed_rating %>%
   slice_max(average_rating, n = 10)
 ```
 
-Should 'NOT A BOOK' be removed from data set?
+Should 'NOT A BOOK' be removed from data set? 
 ```{r}
 books_fixed_rating %>% 
   filter(authors == "NOT A BOOK")
 ```
-These are not books, one is an audio CD for example. These should be removed, as well as 0 pages fixed
+These are not books, one is an audio CD for example. These should be removed, as well as 0 pages fixed.
 ```{r}
 books_fixed <- books_fixed_rating %>% 
   filter(authors != "NOT A BOOK") %>% #completely remove the entries which are not actually books
-  mutate(num_pages = if_else(num_pages == 0, NA, num_pages))
+  mutate(num_pages = if_else(num_pages == 0, NA, num_pages)) #there cannot be 0 pages so set this to NA
 
 books_fixed %>% 
     summarise(across(everything(), 
@@ -126,19 +127,36 @@ books_fixed %>%
   )
 ```
 
-ANSWER
+ANSWER (Most and least popular authors)
 ```{r}
-books_fixed %>% 
+popular_authors <- books_fixed %>% 
   select(authors, contains("rating")) %>% 
+  group_by(authors) %>% 
+  summarise(average_rating = mean(average_rating), sum(ratings_count)) %>% 
   slice_max(average_rating, n = 10)
-
-books_fixed %>% 
-  filter(ratings_count > 100) %>% 
-  select(authors, contains("rating"), title) %>% 
-  slice_max(average_rating, n = 10)
+popular_authors
 ```
 
-Some titles appear to be sets despite the individual books alse being included
+some authors only have one rating which does not seem representative. Anonymous is multiple people so not interesting in this context
+```{r}
+popular_authors <- books_fixed %>% 
+  select(authors, contains("rating")) %>% 
+  group_by(authors) %>% 
+  filter(ratings_count > 10, authors != "Anonymous") %>% 
+  summarise(average_rating = mean(average_rating), sum(ratings_count)) %>% 
+  slice_max(average_rating, n = 10) %>% 
+popular_authors
+
+least_popular_authors <- books_fixed %>% 
+  select(authors, contains("rating"), title) %>% 
+  group_by(authors) %>% 
+  filter(ratings_count > 10) %>%   
+  summarise(average_rating = mean(average_rating), sum(ratings_count)) %>% 
+  slice_min(average_rating, n = 10)
+least_popular_authors
+```
+
+Some titles appear to be sets despite the individual books also being included
 ```{r}
 books_fixed %>% 
   filter(str_detect(title, "Harry Potter")) %>% 
