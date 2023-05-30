@@ -79,7 +79,11 @@ hats_tidy <- hats_tidy %>%
         c("day", "month", "year"),
         sep = "-")
 
-hats_tidy
+hats_tidy %>% 
+  filter(hat_type == "beret") %>% 
+  group_by(date) %>% 
+  summarise(total = sum(observation_count)) %>% 
+  arrange(desc(total))
 ```
 
 # 2 Extension
@@ -92,7 +96,7 @@ Can you join all 4 datasets together so that you’re left with a dataset that l
 cards %>% 
   inner_join(customers, by = "cust_id") %>% 
   inner_join(transactions, by = c("card_number" = "credit_card_id")) %>% 
-  inner_join(fraud, by = c("transaction_id"))
+  inner_join(fraud, by = "transaction_id")
 ```
 
 
@@ -111,7 +115,7 @@ exam_scores_long
 
 ```{r}
 exam_scores_long <- exam_scores_long %>% 
-  separate(exam_question, c("intro_to_remove", "exam_question")) %>% 
+  separate(exam_question, c("intro_to_remove", "exam_question"), sep = "Q") %>% 
   select(-intro_to_remove)
 
 exam_scores_long
