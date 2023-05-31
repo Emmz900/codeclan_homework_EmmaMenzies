@@ -1,0 +1,208 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Homework
+
+## Question 1.
+Find the weather forecast for the next three days online. Create a list of lists in which each inner list should be labelled with the name of the day of the week. Each inner list should contain named elements telling you the temperature, chance of rain and wind speed.
+```{r}
+weather <- list(
+  "Thursday" = list("max_temp" = 13, "max_chance_of_Rain_%" = 11, "max_Wind_speed" = 11),
+  "Friday" = list("max_temp" = 16, "max_chance_of_Rain_%" = 0, "max_Wind_speed" = 9),
+  "Saturday" = list("max_temp" = 17, "max_chance_of_Rain_%" = 0, "max_Wind_speed" = 10)
+)
+```
+
+## Question 2.
+Using the list you’ve just made find:
+
+The chance of rain tomorrow
+```{r}
+weather$Thursday$`max_chance_of_Rain_%`
+```
+The wind speed on the day after tomorrow
+```{r}
+weather$Friday$max_Wind_speed
+```
+The temperature tomorrow.
+```{r}
+weather$Thursday$max_temp
+```
+
+Question 3.
+Find a 14 day forecast online and create a matrix of the forecasts for temperature, where each week is one row and columns correspond to days.
+
+You will want to give a name to the matrix you create.
+```{r}
+two_week_forecast <- matrix(c(16, 15, 16, 17, 18, 18, 17, 17, 17, 17, 17, 18, 16, 16), nrow = 2, ncol = 7, byrow = TRUE#,
+                            # dimnames = list(c("this_week", "next_week"),
+                            #                 c("Wednesday", "Thursday", "Friday", "saturday", "Sunday", "Monday", "Tuesday"))
+                            )
+two_week_forecast
+```
+## Question 4.
+From the matrix you just made select:
+
+The third day of the second week
+```{r}
+two_week_forecast[2, 3]
+```
+
+The whole second week
+```{r}
+two_week_forecast[2, ]
+```
+
+The first, third and fifth days in both weeks.
+```{r}
+two_week_forecast[, c(1, 3, 5)]
+```
+
+## Question 5.
+Write a function that pre-appends “The answer is:” to any character input, while for numeric input, it either just returns the number for numbers less than 10, or divides the number by 10 for numbers greater than 10. For anything else return “Invalid input”.
+```{r}
+returns_as_answer <- function(x){
+  if(is.character(x)){ #character inputs
+    paste("The answer is:", x)
+  } else if (is.numeric(x)){ #numeric inputs
+    if(x < 10){ #less than 10
+      return(x)
+    }else{ # greater than or equal to 10
+      x / 10
+    }
+  }else{ #if not character or numeric then invalid input
+    print("Invalid input")
+  }
+}
+```
+
+```{r}
+returns_as_answer("string")
+```
+```{r}
+returns_as_answer(4)
+```
+```{r}
+returns_as_answer(15)
+```
+```{r}
+returns_as_answer(TRUE)
+```
+
+
+## Question 6.
+Write a function which checks if two vectors have the same elements.
+
+If they have the same elements in the same order, return “Exactly the same”
+If they have the same elements but in a different order, return “The same”
+If they don’t have the same elements, return “Different”.
+```{r}
+#compare each element in order and return TRUE if they all match. If any do not, return FALSE
+compare_vectors <- function(vect_1, vect_2){
+  same = TRUE
+    for(i in vect_1){
+      if(vect_1[i] != vect_2[i]){
+        same = FALSE
+      }
+    }
+  return(same)
+}
+
+#main function
+compare_vector_elements <- function(vector_1, vector_2){
+  sorted_vector_1 = sort(vector_1)
+  sorted_vector_2 = sort(vector_2)
+  
+  if(length(vector_1) == length(vector_2)){ #check they are the same length
+    if(compare_vectors(vector_1, vector_2)){
+      return("Exactly the same")
+    }else if(compare_vectors(sorted_vector_1, sorted_vector_2)){
+      return("The same")
+    }else{
+      return("Different")
+    }
+  }else{
+    return("These vectors are different lengths")
+  }
+}
+```
+
+Test
+```{r}
+first_vector <- c(1:5)
+second_vector <- c(1:5)
+third_vector <- c(5, 2, 4, 3, 1)
+fourth_vector <- c(1, 2)
+fifth_vector <- c("this", "is", "also", "a", "vector")
+
+compare_vectors(first_vector, third_vector)
+
+#FINAL RESULT
+compare_vector_elements(first_vector, second_vector)
+```
+
+# 2 Extension
+
+
+## Question 7.
+Write code that prints a multiplication table for numbers up to 12. i.e. there will be 12 rows and 12 columns, and each element should be the row number multiplied by the column number.
+
+From: https://adriann.github.io/programming_problems.html
+
+
+
+## Question 8.
+Write a function that takes a vector, and creates a text art histogram, like the one below.
+
+You may want to use the function cat(). This is similar to print(), but prints directly, without vector markers. You can also include newlines "\n" when using cat().
+
+For example, the vector c(1, 2, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 4, 3, 3, 3, 3) should produce the histogram below - the histogram dislpays the number of times each number appears in the vector.
+
+1 | ***
+2 | *
+3 | *******
+4 | ****
+5 | **
+
+```{r}
+create_histogram <- function(vector){
+  # sort vector
+  sort(vector)
+  
+  # produce output
+  groups = unique(vector)
+  for(group in groups){ # for each unique element make a group
+    asterisks = list()
+    
+    for(i in vector){ 
+      if(i == group){ # compare each part of the vector to the group
+        asterisks <- append(asterisks, "*") #add an asterisk for each matching entry in the vector
+      }
+    }
+    cat(group, " | ", paste0(asterisks), "\n", sep = "")
+  }
+}
+```
+
+```{r}
+my_vector <- c(1, 2, 3, 4, 5, 1, 3, 4, 5, 1, 3, 4, 4, 3, 3, 3, 3)
+unique(my_vector)
+
+asterisks = c()
+asterisks <- append(asterisks, "*")
+asterisks <- append(asterisks, "*")
+cat(asterisks, sep = "", "\n")
+# print("New line")
+```
+
+```{r}
+create_histogram(my_vector)
+```
+IT WORKS!
+
+```{r}
+create_histogram(two_week_forecast[2,])
+```
+
