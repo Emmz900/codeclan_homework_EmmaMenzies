@@ -39,7 +39,7 @@ codeclan_twitter %>%
 Count the total number of likes (i.e. total of favorite_count), split by media type, and arrange them from most likes to least. Assume that any tweets without a listed media type are of type “text”.
 ```{r}
 codeclan_twitter %>% 
-  mutate(media_type = coalesce(media_type, "text")) %>% 
+  mutate(media_type = coalesce(media_type, "text")) %>% #could also use case_match() or if_else()
   group_by(media_type) %>% 
   summarise(total_likes = sum(favorite_count)) %>% 
   arrange(desc(total_likes))
@@ -49,7 +49,7 @@ codeclan_twitter %>%
 Find the mean number of characters that a CodeClan tweet contains. You can either find a way to count the text in the text variable, or use the variable display_text_width which contains a count. Checking both would be a good idea if possible to see if they match (but it’s not essential).
 ```{r}
 codeclan_twitter %>% 
-  summarise(my_mean_chr_count = mean(nchar(text)),
+  summarise(my_mean_chr_count = mean(nchar(text)), #or str_length(){stringr} instead of nchar(){base}
             their_mean_chr_count = mean(display_text_width))
 #These give different values, why??
 ```
@@ -86,28 +86,26 @@ From your new joined data, create a new tibble codeclan_hashtags containing only
 ```{r}
 codeclan_hashtags <- codeclan_joined %>% 
   select(tweet_id, hashtags) %>% 
-  filter(!is.na(hashtags)) %>% 
+  filter(!is.na(hashtags)) %>% #could have used drop_na
   mutate(hashtags = str_to_lower(hashtags))
 codeclan_hashtags
 ```
 
-4 Extensions
+# 4 Extensions
 
 
 ## Question 8.
-Some tweets have more than one hashtag, denoted by the c( symbols at the start of the string. Use the str_sub() and str_detect() functions and your codeclan_hashtags tibble from above to find all the cases in which the hashtag string begins with charactersc(.
+Some tweets have more than one hashtag, denoted by the c( symbols at the start of the string. Use the str_sub() and str_detect() functions and your codeclan_hashtags tibble from above to find all the cases in which the hashtag string begins with characters c(.
 ```{r}
 codeclan_hashtags %>% 
   filter(str_detect(hashtags, "^c\\("))
 ```
 
-
-
 ## Question 9.
 Use the str_detect() function to find all tweets with text that mentions “Edinburgh”, and count how many such tweets there are.
 ```{r}
 codeclan_twitter %>% 
-  filter(str_detect(text, "Edinburgh")) %>% 
+  filter(str_detect(text, "Edinburgh")) %>% #use(?i) for not case sensitive
   summarise(total = n())
 ```
 
@@ -115,10 +113,13 @@ codeclan_twitter %>%
 ## Question 10.
 Use str_extract_all() with a regular expression to find out which Twitter users CodeClan have been tweeting.
 ```{r}
-unique(flatten_chr(str_extract_all(codeclan_twitter$text, "@[:alnum:]+")))
+unique(flatten_chr(str_extract_all(codeclan_twitter$text, "@[:alnum_:]+")))
 
-# I also tried with a pipe but kept getting errors ??
+#in a pipe
 codeclan_twitter %>% 
-  str_extract_all(text, "@[:alnum:]+")
+  pull(text) %>% #need to pull otherwise you get a vector after str_extract_all() and a warning
+  str_extract_all("@[:alnum_:]+") %>% 
+  flatten_chr() %>% 
+  unique()
 ```
 
