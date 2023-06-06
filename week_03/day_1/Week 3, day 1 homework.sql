@@ -118,7 +118,7 @@ in the following style ‘Bob Smith - Legal (joined 1998)’.
 Further restrict output to only those employees with a stored start_date */
 SELECT 
 	concat(first_name, ' ', last_name, ' - ', department, ' (joined ', 
-	to_char(start_date, 'Month'), ' ',
+	to_char(start_date, 'FMMonth'), ' ',
 	EXTRACT(YEAR FROM start_date), ')') 
 	AS badge_label
 FROM employees 
@@ -133,5 +133,5 @@ SELECT
 	CASE 
 		WHEN salary < 40000 THEN 'low'
 		WHEN salary >= 40000 THEN 'high'
-	END
+	END AS salary_class
 FROM employees;
