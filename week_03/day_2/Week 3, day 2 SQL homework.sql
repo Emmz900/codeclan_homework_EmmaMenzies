@@ -33,6 +33,7 @@ SELECT
 FROM  employees AS e
 	INNER JOIN teams AS t 
 	ON e.team_id = t.id
+--WHERE to_number(t.charge_cost, '999') > 80; 
 WHERE CAST(t.charge_cost AS int) > 80;
 
 /* Question 2 */
@@ -59,7 +60,7 @@ FROM
 	(employees AS e
 	LEFT JOIN pay_details AS pd
 	ON e.pay_detail_id = pd.id)
-	INNER JOIN teams AS t 
+	LEFT JOIN teams AS t 
 	ON t.id = e.team_id;
 
 /*Question 3 */
@@ -68,7 +69,7 @@ SELECT
 	e.id,
 	t.name AS team_name
 FROM  employees AS e
-	INNER JOIN teams AS t 
+	LEFT JOIN teams AS t 
 	ON e.team_id = t.id;
 
 /*b + c*/
@@ -76,7 +77,7 @@ SELECT
 	t.name AS team_name,
 	count(e.id)
 FROM  employees AS e
-	INNER JOIN teams AS t 
+	LEFT JOIN teams AS t 
 	ON e.team_id = t.id
 GROUP BY t.id
 ORDER BY count(e.id);
@@ -96,9 +97,7 @@ ORDER BY count(e.id);
 
 /*b)*/
 SELECT 
-	t.id AS team_id,
 	t.name AS team_name,
-	count(e.id) AS num_employees,
 	CAST(t.charge_cost AS int) * count(e.id) AS total_day_charge
 FROM  employees AS e
 	INNER JOIN teams AS t 
