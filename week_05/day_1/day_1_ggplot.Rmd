@@ -1,0 +1,166 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# Week 5, Day 1, Homework
+```{r}
+library(tidyverse)
+library(CodeClanData)
+```
+
+## Part 2.1
+```{r}
+col_scheme <- c("#E89FE9", "#50434F", "#B6A7B5", "#F9A472", "#BD7040")
+```
+
+### Question 1.
+Take the data in the dataset qb_revenue_breakdown and make a stacked bar chart showing the sources of revenue across the two years in the dataset.
+```{r}
+qb_revenue_breakdown %>% 
+  ggplot(aes(Year, Revenue, fill = Product)) +
+  geom_col() +
+  labs(
+    y = "Revenue (£)",
+    title = "Sources of Revenue",
+    subtitle = "2018-2019"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_fill_manual(values = col_scheme) +
+  theme(
+    text = element_text(size = 12),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 16),
+    plot.subtitle = element_text(size = 10)
+    )
+```
+
+### Question 2.
+Make a line chart showing monthly sales of the “flagship product” - the ‘KwikBit Unit 1’ - over the last year. This data is inside qb_monthly_sales, but you will need to use filter() or subset() (base R).
+```{r}
+qb_monthly_sales %>% 
+  filter(Cashflow == "Kwikbit Unit 1 Sales") %>% 
+  ggplot(aes(Date, Amount)) +
+  geom_line() +
+  labs(
+    x = "Month",
+    y = "Monthly Sales (£)",
+    title = "Monthly Sales of KwikBit Unit 1",
+    subtitle = "Aug 2018 - July 2019"
+  ) +
+  scale_x_date(date_breaks = "1 month", date_labels = "%b-%y") +
+  theme_light() +
+    theme(
+    text = element_text(size = 12),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 16),
+    plot.subtitle = element_text(size = 10)
+    )
+```
+
+### Question 3.
+Make a line chart showing monthly revenue and costs over the last year. This data is also in qb_monthly_sales.
+```{r}
+qb_monthly_sales %>% 
+  filter(Cashflow == "Total Revenue" | Cashflow == "Cost") %>% 
+  ggplot() +
+  aes(Date, Amount, group = Cashflow, colour = Cashflow) +
+  geom_line() +
+  labs(
+    x = "Month",
+    y = "Amount (£)",
+    title = "Total Revenue and Costs",
+    subtitle = "Aug 2018 - July 2019"
+  ) +
+  scale_x_date(date_breaks = "2 month", date_labels = "%b-%y") +
+  scale_y_continuous(labels = scales::comma) +
+  scale_colour_manual(values = col_scheme) +
+  theme_light() +
+  theme(
+    text = element_text(size = 12),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 16),
+    plot.subtitle = element_text(size = 10)
+  )
+```
+
+### Question 4.
+Show annual sales of personal fitness trackers over the last 5 years broken down by company as a ribbon plot (use geom_area). This data is in qb_competitors.
+```{r}
+qb_competitors %>% 
+  mutate(Revenue = Revenue / 1000000) %>% 
+  ggplot() +
+  geom_area(aes(Year, Revenue, fill = Company)) +
+  labs(
+    y = "Revenue (£ millions)",
+    title = "Annual Sales by Competitors",
+    subtitle = "2015 - 2019"
+  ) +
+  scale_fill_manual(values = col_scheme) +
+  theme(
+    text = element_text(size = 12),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 16),
+    plot.subtitle = element_text(size = 10)
+  )
+```
+
+### Question 5.
+Now show the sales from the four competitors as a line graph. Include an extra layer that shows the data points used to make the lines.
+```{r}
+qb_competitors %>% 
+  mutate(Revenue = Revenue / 1000000) %>% 
+  ggplot() +
+  aes(Year, Revenue, group = Company, colour = Company) +
+  geom_line() +
+  geom_point() +
+  labs(
+    y = "Revenue (£ millions)",
+    title = "Annual Sales by Competitors",
+    subtitle = "2015 - 2019"
+  ) +
+  scale_colour_manual(values = col_scheme) +
+  theme(
+    text = element_text(size = 12),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 16),
+    plot.subtitle = element_text(size = 10)
+  )
+```
+
+### Question 6.
+Now the company wants to compare the number of steps that their device counts vs. their competitors. Make a line graph of the number of steps throughout time, and use faceting to compare between companies and people. The data for this is in qb_device_data.
+```{r}
+qb_device_data %>% 
+  mutate(time = hours + (mins/60)) %>% 
+  ggplot() +
+  aes(time, counts, group = device, colour = device) +
+  geom_line() + 
+  facet_wrap(~device, ncol = 4) +
+  labs(
+    y = "Number of steps",
+    title = "Number of Steps Measured Over 24h Compared to Competitors",
+    colour = "Company"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_colour_manual(values = col_scheme) +
+  theme(
+    text = element_text(size = 12),
+    axis.title = element_text(size = 10),
+    plot.title = element_text(size = 16),
+    plot.subtitle = element_text(size = 10)
+  )
+```
+
+## Part 2.2 
+### Question 1.
+Take the plots that you produced in part one and now polish them by:
+
+* Adding appropriate labels
+* Changing the scales and coordinates when appropriate.
+* Applying a unified theme, which is described below:
+* Graphs should have white backgrounds, and use colour sparingly.
+* There should be faint grid lines.
+* Font sizes should be ~12pt although titles should be slightly larger and axis labels can be slightly smaller.
+* All plots should use colours from the following company colour scheme.
+
+
