@@ -11,6 +11,12 @@ library(CodeClanData)
 ## Part 2.1
 ```{r}
 col_scheme <- c("#E89FE9", "#50434F", "#B6A7B5", "#F9A472", "#BD7040")
+theme_qb <- theme(
+  text = element_text(size = 12),
+  axis.title = element_text(size = 10),
+  plot.title = element_text(size = 16),
+  plot.subtitle = element_text(size = 10)
+)
 ```
 
 ### Question 1.
@@ -26,12 +32,8 @@ qb_revenue_breakdown %>%
   ) +
   scale_y_continuous(labels = scales::comma) +
   scale_fill_manual(values = col_scheme) +
-  theme(
-    text = element_text(size = 12),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 16),
-    plot.subtitle = element_text(size = 10)
-    )
+  theme_qb +
+  theme_light()
 ```
 
 ### Question 2.
@@ -49,12 +51,7 @@ qb_monthly_sales %>%
   ) +
   scale_x_date(date_breaks = "1 month", date_labels = "%b-%y") +
   theme_light() +
-    theme(
-    text = element_text(size = 12),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 16),
-    plot.subtitle = element_text(size = 10)
-    )
+  theme_qb
 ```
 
 ### Question 3.
@@ -63,7 +60,7 @@ Make a line chart showing monthly revenue and costs over the last year. This dat
 qb_monthly_sales %>% 
   filter(Cashflow == "Total Revenue" | Cashflow == "Cost") %>% 
   ggplot() +
-  aes(Date, Amount, group = Cashflow, colour = Cashflow) +
+  aes(Date, Amount, colour = Cashflow) +
   geom_line() +
   labs(
     x = "Month",
@@ -75,12 +72,7 @@ qb_monthly_sales %>%
   scale_y_continuous(labels = scales::comma) +
   scale_colour_manual(values = col_scheme) +
   theme_light() +
-  theme(
-    text = element_text(size = 12),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 16),
-    plot.subtitle = element_text(size = 10)
-  )
+  theme_qb
 ```
 
 ### Question 4.
@@ -96,12 +88,8 @@ qb_competitors %>%
     subtitle = "2015 - 2019"
   ) +
   scale_fill_manual(values = col_scheme) +
-  theme(
-    text = element_text(size = 12),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 16),
-    plot.subtitle = element_text(size = 10)
-  )
+  theme_qb +
+  theme_light()
 ```
 
 ### Question 5.
@@ -110,7 +98,7 @@ Now show the sales from the four competitors as a line graph. Include an extra l
 qb_competitors %>% 
   mutate(Revenue = Revenue / 1000000) %>% 
   ggplot() +
-  aes(Year, Revenue, group = Company, colour = Company) +
+  aes(Year, Revenue, colour = Company) +
   geom_line() +
   geom_point() +
   labs(
@@ -119,12 +107,8 @@ qb_competitors %>%
     subtitle = "2015 - 2019"
   ) +
   scale_colour_manual(values = col_scheme) +
-  theme(
-    text = element_text(size = 12),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 16),
-    plot.subtitle = element_text(size = 10)
-  )
+  theme_qb +
+  theme_light()
 ```
 
 ### Question 6.
@@ -133,9 +117,9 @@ Now the company wants to compare the number of steps that their device counts vs
 qb_device_data %>% 
   mutate(time = hours + (mins/60)) %>% 
   ggplot() +
-  aes(time, counts, group = device, colour = device) +
+  aes(time, counts, colour = device) +
   geom_line() + 
-  facet_wrap(~device, ncol = 4) +
+  facet_grid(id ~device) +
   labs(
     y = "Number of steps",
     title = "Number of Steps Measured Over 24h Compared to Competitors",
@@ -143,12 +127,8 @@ qb_device_data %>%
   ) +
   scale_y_continuous(labels = scales::comma) +
   scale_colour_manual(values = col_scheme) +
-  theme(
-    text = element_text(size = 12),
-    axis.title = element_text(size = 10),
-    plot.title = element_text(size = 16),
-    plot.subtitle = element_text(size = 10)
-  )
+  theme_qb +
+  theme_light()
 ```
 
 ## Part 2.2 
