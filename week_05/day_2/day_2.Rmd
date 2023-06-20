@@ -1,0 +1,115 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+# Week 5, day 2, Advanced ggplot homework
+
+## Question 1.
+Load in the libraries you need, and look at the backpack data. Take note of variable names and dimensions.
+```{r}
+library(tidyverse)
+library(CodeClanData)
+```
+```{r}
+backpack
+names(backpack)
+dim(backpack)
+```
+
+## Question 2. What is the distribution of backpack weights that students are carrying? Choose an appropriate graph to show the distribution.
+```{r}
+backpack %>% 
+  ggplot(aes(backpack_weight)) +
+  geom_histogram(binwidth = 1, colour = "white") +
+  scale_x_continuous(breaks = seq(0, 40, 5)) +
+  theme_classic()
+```
+This plot illustrates the distribution of backpack weights among University Students.  
+While the range is 2-35 kg the most common backpack weight is 10 kg.   
+In general the weights are between 5-20 kg.
+
+## Question 3. Are there differences in backpack weight between sex?
+```{r}
+# backpack %>% 
+#   ggplot(aes(backpack_weight, fill = sex)) +
+#   geom_bar(position = "dodge") +
+#   facet_wrap(~ sex, ncol = 1) +
+#   scale_y_continuous(breaks = seq(0, 10, 2)) +
+#   theme_light()
+```
+```{r}
+backpack %>% 
+  #group_by(sex) %>% 
+  #summarise(average_weight = mean(backpack_weight)) %>% 
+  ggplot(aes(sex, backpack_weight, fill = sex)) +
+  geom_boxplot(show.legend = FALSE) +
+  scale_y_continuous(breaks = seq(0,40,2)) +
+  theme_classic()
+```
+On average, males have heavier backpacks by around 1.5 kg. While there is a single outlier at 35 kg, the distribution does confirm that males tend to have heavier backpacks than females.
+
+## Question 4.What is the relationship between body weight and backpack weight?
+```{r}
+backpack %>% 
+  ggplot(aes(body_weight, backpack_weight)) +
+  geom_point() +
+  geom_smooth(method = "lm")
+```
+While backpack weight appears to slightly increase with body weight this is not a clear correlation.
+
+## Question 5.Is this relationship different between men and women? Choose an appropriate plot and interpret your findings.
+```{r}
+backpack %>% 
+  ggplot(aes(body_weight, backpack_weight, colour = sex)) +
+  geom_point() +
+  geom_smooth(method = "lm", se = F) +
+  facet_wrap(~ sex)
+```
+The increase in backpack weight with body weight is slightly clearer in women than in men.
+
+## Question 6. What proportion of students report back pain?
+```{r}
+backpack %>% 
+  mutate(back_problems = if_else(back_problems == 1,
+                                  "yes",
+                                  "no")) %>% 
+  group_by(back_problems) %>% 
+  arrange(desc(back_problems)) %>% 
+  summarise(proportion = paste0(n()/nrow(backpack)*100, "%")) %>% 
+  ggplot(aes(x = "", y = proportion, fill = as.factor(back_problems))) +
+  geom_bar(stat = "identity") +
+  theme_minimal() +
+  coord_polar("y", start=0) +
+  labs(x = " ",
+       y = " ",
+       title = "Proportion of students with back pain") +
+  geom_text(aes(label = back_problems))
+```
+???? Labels do not work and this is a complicated way of doing a simple calculation.
+32% of students suffer from back pain.
+
+## Question 7. Is this proportion different between men and women?
+```{r}
+backpack %>% 
+  mutate(back_problems = if_else(back_problems == 1,
+                                  "yes",
+                                  "no")) %>% 
+  ggplot(aes(sex, fill = as.factor(back_problems))) +
+  geom_bar(position = "dodge")
+```
+A much higher proportion of female students experienced back pain compared to male students.
+
+## Question 8. Now you’ve investigated your data separately, create plots to describe the relationship between backpack weight, body weight, gender and reported backpain. Try both backpack_weight and body_weight as well as the ratio.
+```{r}
+
+```
+
+
+# 3 Extensions
+## Question 1.
+
+Does reported backpain differ across the year groups? Ignore year 0 in your data.
+
+## Question 2.
+
+Is there a difference between how heavy the bags those in different years carry?
