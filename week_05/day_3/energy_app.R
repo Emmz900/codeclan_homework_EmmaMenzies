@@ -1,51 +1,99 @@
 library(tidyverse)
 library(shiny)
 library(CodeClanData)
+library(bslib)
 
-brewers <- unique(beer$brewer)
-
-beer <- beer %>% 
-  mutate(brand = str_remove(brand, "\\\xca"),
-         calories = as.numeric(calories)) %>% 
-  pivot_longer(percent:carbohydrates,
-               names_to = "attribute",
-               values_to = "value")
-
+years <- unique(energy_scotland$Year)
+sectors <- unique(energy_scotland$Sector)
+col_scheme <- c(
+  "Renewables" = "#8cd98c",
+  "Pumped hydro" = "#66c2ff",
+  "Nuclear" = "#a3a3c2",
+  "Coal" = "#d98c8c",
+  "Oil" = "#ffd966",
+  "Gas" = "#cc99ff")
 
 ui <- fluidPage(
-  titlePanel(tags$h1("Beer")),
+  
+  theme = bs_theme(bootswatch = "cerulean"),
+  
+  titlePanel(tags$h1("Energy Production in Scotland")),
+  
   
   fluidRow(
+  # Slider to choose year to show in first graph  
     column(
       width = 6,
-      selectInput(
-        "brewer_input",
-        "Brewer",
-        brewers
+      sliderInput(
+        "year_input",
+        "Choose a year",
+        min = min(years),
+        max = max(years),
+        value = 2005, #initial value
+        step = 1,
+        round = TRUE,
+        ticks = FALSE,
+        sep = ""
       )
     ),
-    column(width = 6,
-           radioButtons(
-             "attribute_input",
-             "Property of Beer",
-             c("percent", "calories", "carbohydrates")
-           )
+    
+    # Buttons to choose which energy source for the second graph
+    column(
+      width = 6,
+      radioButtons(
+        "sector_input",
+        "Choose a Sector",
+        sectors,
+        inline = TRUE
+      )
     )
   ),
   
-  fluidRow(plotOutput("beer_plot"))
+  fluidRow(
+    #plot of energy by sector in selected year
+    column(width = 6,
+           plotOutput("energy_by_sector")
+    ),
+    #plot of energy over time by selected sector
+    column(width = 6,
+           plotOutput("energy_by_year")
+    )
+  )
 )
 
 server <- function(input, output) {
   
-  output$beer_plot <- renderPlot({
-    beer  %>% 
-      filter(brewer == input$brewer_input & attribute == input$attribute_input) %>% 
-      ggplot(aes(brand, value, colour = value)) + #
+  output$energy_by_sector <- renderPlot({
+    energy_scotland %>% 
+      filter(Year == input$year_input) %>% # only selected year
+      ggplot(aes(Sector, EnergyProd, fill = Sector)) +
       geom_col(show.legend = FALSE) +
-      theme_classic()+
-      theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-      scale_color_gradient(low = "darkorange", high = "darkorange4")
+      ylab("Energy (MW)") +
+      scale_y_continuous(labels = scales::comma) +
+      scale_fill_manual(values = col_scheme) + #fill according to defined colour scheme
+      theme(
+        panel.grid.major.y = element_line(colour = "lightgrey"),
+        panel.background = element_blank(),
+        text = element_text(size = 16),
+        axis.line.y = element_line(colour = "lightgrey")
+      )
+  })
+  
+  output$energy_by_year <- renderPlot({
+    energy_scotland %>% 
+      filter(Sector == input$sector_input) %>% 
+      ggplot(aes(Year, EnergyProd, colour = input$sector_input, size = 2)) +
+      geom_line(show.legend = FALSE)+
+      ylab("Energy (MW)") +
+      scale_y_continuous(labels = scales::comma) +
+      scale_x_continuous(breaks = 2005:2020) +
+      scale_colour_manual(values = col_scheme) +
+      theme(
+        panel.grid.major = element_line(colour = "lightgrey"),
+        panel.background = element_blank(),
+        text = element_text(size = 16),
+        axis.line = element_line(colour = "lightgrey")
+      )
   })
 }
 

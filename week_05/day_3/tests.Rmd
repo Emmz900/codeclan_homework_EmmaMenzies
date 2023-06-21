@@ -1,0 +1,64 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(shiny)
+library(CodeClanData)
+library(janitor)
+
+beer %>% 
+  mutate(brand = str_remove(brand, "\\\xca"),
+         calories = as.numeric(calories)) %>% 
+  pivot_longer(percent:carbohydrates,
+               names_to = "attribute",
+               values_to = "value") %>% 
+  filter(brewer == "Budweiser" & attribute == "percent") %>% 
+  ggplot(aes(brand, value, colour = value)) + #
+  geom_point(show.legend = FALSE) +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_color_gradient(low = "darkorange", high = "darkorange4")
+
+```
+
+```{r}
+energy_scotland %>% 
+  filter(Year == 2005) %>% 
+  ggplot(aes(Sector, EnergyProd, fill = Sector)) +
+  geom_col(show.legend = FALSE) +
+  ylab("Energy (MW)") +
+  scale_y_continuous(labels = scales::comma) +
+  scale_fill_manual(values = c(
+    "Renewables" = "#8cd98c",
+    "Pumped hydro" = "#66c2ff",
+    "Nuclear" = "#a3a3c2",
+    "Coal" = "#d98c8c",
+    "Oil" = "#ffd966",
+    "Gas" = "#cc99ff"
+  )) +
+  theme(
+    panel.grid.major.y = element_line(colour = "lightgrey"),
+    panel.background = element_blank(),
+    text = element_text(size = 12),
+    axis.line.y = element_line(colour = "lightgrey")
+    )
+  #theme_minimal()
+```
+
+```{r}
+energy_scotland %>% 
+  filter(Sector == "Renewables") %>% 
+  ggplot(aes(Year, EnergyProd)) +
+  geom_line() +
+  labs(
+    title = "Energy Production in Scotland",
+    y = "Energy (MW)"
+  ) +
+  scale_y_continuous(labels = scales::comma) +
+  scale_x_continuous(breaks = 2005:2020) +
+  theme_minimal()
+```
+
