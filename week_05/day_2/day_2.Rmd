@@ -81,7 +81,6 @@ backpack %>%
   geom_bar(show.legend = FALSE) +
   theme_minimal()
 ```
-???? Labels do not work and this is a complicated way of doing a simple calculation.
 32% of students suffer from back pain.
 
 ```{r}
