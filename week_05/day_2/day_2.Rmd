@@ -11,7 +11,10 @@ library(tidyverse)
 library(CodeClanData)
 ```
 ```{r}
-backpack
+backpack <- backpack %>% 
+mutate(back_problems = as.factor(if_else(back_problems == 1,
+                                  "back problems",
+                                  "no back problems")))
 names(backpack)
 dim(backpack)
 ```
@@ -22,7 +25,8 @@ backpack %>%
   ggplot(aes(backpack_weight)) +
   geom_histogram(binwidth = 1, colour = "white") +
   scale_x_continuous(breaks = seq(0, 40, 5)) +
-  theme_classic()
+  theme_classic() +
+  ggtitle()
 ```
 This plot illustrates the distribution of backpack weights among University Students.  
 While the range is 2-35 kg the most common backpack weight is 10 kg.   
@@ -52,8 +56,8 @@ On average, males have heavier backpacks by around 1.5 kg. While there is a sing
 ```{r}
 backpack %>% 
   ggplot(aes(body_weight, backpack_weight)) +
-  geom_point() +
-  geom_smooth(method = "lm")
+  geom_point() 
+  #geom_smooth(method = "lm")
 ```
 While backpack weight appears to slightly increase with body weight this is not a clear correlation.
 
@@ -62,7 +66,7 @@ While backpack weight appears to slightly increase with body weight this is not 
 backpack %>% 
   ggplot(aes(body_weight, backpack_weight, colour = sex)) +
   geom_point() +
-  geom_smooth(method = "lm", se = F) +
+  #geom_smooth(method = "lm", se = F) +
   facet_wrap(~ sex)
 ```
 The increase in backpack weight with body weight is slightly clearer in women than in men.
@@ -70,41 +74,64 @@ The increase in backpack weight with body weight is slightly clearer in women th
 ## Question 6. What proportion of students report back pain?
 ```{r}
 backpack %>% 
-  mutate(back_problems = as.factor(if_else(back_problems == 1,
-                                  "yes",
-                                  "no"))) %>% 
   # group_by(back_problems) %>% 
   # arrange(desc(back_problems)) %>% 
   # summarise(proportion = paste0(n()/nrow(backpack)*100, "%")) %>% 
   ggplot(aes(x = back_problems, fill = back_problems)) +
-  geom_bar() +
+  geom_bar(show.legend = FALSE) +
   theme_minimal()
 ```
 ???? Labels do not work and this is a complicated way of doing a simple calculation.
 32% of students suffer from back pain.
 
+```{r}
+backpack %>% 
+  ggplot(aes(x = "", fill = back_problems)) +
+  geom_bar(position = "fill") +
+  theme_minimal() +
+  labs(y = "proportion",
+       x = "proportion of students with back pain") +
+  scale_y_continuous(labels = scales::percent)
+
+```
+
 ## Question 7. Is this proportion different between men and women?
 ```{r}
 backpack %>% 
-  mutate(back_problems = if_else(back_problems == 1,
-                                  "yes",
-                                  "no")) %>% 
   ggplot(aes(sex, fill = as.factor(back_problems))) +
-  geom_bar(position = "dodge")
+  geom_bar(position = 
+             #"dodge")
+             "fill")
 ```
 A much higher proportion of female students experienced back pain compared to male students.
 
 ## Question 8. Now you’ve investigated your data separately, create plots to describe the relationship between backpack weight, body weight, gender and reported backpain. Try both backpack_weight and body_weight as well as the ratio.
 ```{r}
-
+backpack %>% 
+  ggplot(aes(body_weight, backpack_weight, colour = back_problems)) +
+  geom_point() +
+  facet_grid(sex ~ back_problems)
 ```
 
 
 # 3 Extensions
-## Question 1.
+## Question 1. Does reported backpain differ across the year groups? Ignore year 0 in your data.
+```{r}
+backpack %>% 
+  ggplot(aes(year, fill = back_problems)) +
+  geom_bar() +
+  scale_x_continuous(breaks = 0:6)
+```
+Back s present in years 1-5, and particularly in year 3.
 
-Does reported backpain differ across the year groups? Ignore year 0 in your data.
+## Question 2. Is there a difference between how heavy the bags those in different years carry?
 
-## Question 2.
-
-Is there a difference between how heavy the bags those in different years carry?
+```{r}
+backpack %>%
+  filter(year != 0) %>% 
+  ggplot(aes(backpack_weight, fill = back_problems)) +
+  geom_bar() +
+  facet_wrap(~ year, ncol = 1)
+```
+Back pack weigths are slightly heavier in years 2-5.   
+The people experiencing back problems are not always those with the heaviest backpacks.
