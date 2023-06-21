@@ -70,20 +70,15 @@ The increase in backpack weight with body weight is slightly clearer in women th
 ## Question 6. What proportion of students report back pain?
 ```{r}
 backpack %>% 
-  mutate(back_problems = if_else(back_problems == 1,
+  mutate(back_problems = as.factor(if_else(back_problems == 1,
                                   "yes",
-                                  "no")) %>% 
-  group_by(back_problems) %>% 
-  arrange(desc(back_problems)) %>% 
-  summarise(proportion = paste0(n()/nrow(backpack)*100, "%")) %>% 
-  ggplot(aes(x = "", y = proportion, fill = as.factor(back_problems))) +
-  geom_bar(stat = "identity") +
-  theme_minimal() +
-  coord_polar("y", start=0) +
-  labs(x = " ",
-       y = " ",
-       title = "Proportion of students with back pain") +
-  geom_text(aes(label = back_problems))
+                                  "no"))) %>% 
+  # group_by(back_problems) %>% 
+  # arrange(desc(back_problems)) %>% 
+  # summarise(proportion = paste0(n()/nrow(backpack)*100, "%")) %>% 
+  ggplot(aes(x = back_problems, fill = back_problems)) +
+  geom_bar() +
+  theme_minimal()
 ```
 ???? Labels do not work and this is a complicated way of doing a simple calculation.
 32% of students suffer from back pain.
