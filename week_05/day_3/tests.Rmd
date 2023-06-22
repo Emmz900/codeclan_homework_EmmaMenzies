@@ -8,20 +8,6 @@ library(tidyverse)
 library(shiny)
 library(CodeClanData)
 library(janitor)
-
-beer %>% 
-  mutate(brand = str_remove(brand, "\\\xca"),
-         calories = as.numeric(calories)) %>% 
-  pivot_longer(percent:carbohydrates,
-               names_to = "attribute",
-               values_to = "value") %>% 
-  filter(brewer == "Budweiser" & attribute == "percent") %>% 
-  ggplot(aes(brand, value, colour = value)) + #
-  geom_point(show.legend = FALSE) +
-  theme_classic()+
-  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
-  scale_color_gradient(low = "darkorange", high = "darkorange4")
-
 ```
 
 ```{r}
@@ -60,5 +46,20 @@ energy_scotland %>%
   scale_y_continuous(labels = scales::comma) +
   scale_x_continuous(breaks = 2005:2020) +
   theme_minimal()
+```
+
+```{r}
+beer %>% 
+  mutate(brand = str_remove(brand, "\\\xca"),
+         calories = as.numeric(calories)) %>% 
+  pivot_longer(percent:carbohydrates,
+               names_to = "attribute",
+               values_to = "value") %>% 
+  filter(brewer == "Budweiser" & attribute == "percent") %>% 
+  ggplot(aes(brand, value, colour = value)) + #
+  geom_point(show.legend = FALSE) +
+  theme_classic()+
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_color_gradient(low = "darkorange", high = "darkorange4")
 ```
 

@@ -50,15 +50,16 @@ ui <- fluidPage(
   ),
   
   fluidRow(
-    #plot of energy by sector in selected year
+    # plot of energy by sector in selected year
     column(width = 6,
            plotOutput("energy_by_sector")
     ),
-    #plot of energy over time by selected sector
+    # plot of energy over time by selected sector
     column(width = 6,
            plotOutput("energy_by_year")
     )
   )
+  
 )
 
 server <- function(input, output) {
@@ -75,9 +76,11 @@ server <- function(input, output) {
         panel.grid.major.y = element_line(colour = "lightgrey"),
         panel.background = element_blank(),
         text = element_text(size = 16),
-        axis.line.y = element_line(colour = "lightgrey")
+        axis.line.y = element_line(colour = "lightgrey"),
+        axis.text.x = element_text(angle = 45, hjust = 1)
       )
   })
+  
   
   output$energy_by_year <- renderPlot({
     energy_scotland %>% 
