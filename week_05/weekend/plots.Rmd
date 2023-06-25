@@ -163,6 +163,36 @@ game_sales %>%
 ```
 
 ```{r}
+game_sales <- game_sales %>% 
+  mutate(
+    platform_cat = factor(
+      case_when(
+        str_detect(platform, "PS") ~ "Playstation",
+        str_detect(platform, "X") ~ "Xbox",
+        str_detect(platform, "Wii|GC|GB|DS") ~ "Nintendo",
+        .default = platform
+      )
+    )
+  )
+
+game_sales %>% 
+  filter(publisher == "Activision") %>% 
+  group_by(year_of_release, platform_cat, .drop = FALSE) %>% 
+  summarise(total_games_plat = n()) %>% 
+  ungroup() %>% 
+  group_by(year_of_release) %>% 
+  mutate(total_games = sum(total_games_plat)) %>% 
+  ggplot() +
+  geom_line(aes(year_of_release, total_games_plat, colour = platform_cat)) +
+  geom_point(aes(year_of_release, total_games_plat, colour = platform_cat))+
+  geom_line(aes(year_of_release, total_games, colour = "Total")) +
+  geom_point(aes(year_of_release, total_games, colour = "Total")) +
+  theme_classic()
+```
+
+
+
+```{r}
 game_sales %>% 
   group_by(platform_cat, platform) %>% 
   summarise(total = n()) %>% 

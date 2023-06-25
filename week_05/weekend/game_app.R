@@ -216,6 +216,7 @@ server <- function(input, output, session) {
         y = "Total Number of Games",
         fill = "Platform"
       ) +
+      scale_y_continuous(breaks = seq(0, 1000, 100)) +
       scale_fill_manual(values = colour_scheme) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1),
             panel.grid = element_blank()) +
@@ -238,6 +239,7 @@ server <- function(input, output, session) {
         position = position_stack(vjust = 0.5)
       ) +
       theme(panel.grid = element_blank()) +
+      scale_y_continuous(breaks = seq(0, 1000, 100)) +
       labs(
         title = "Games Released on Each Platform",
         x = "Platform",
