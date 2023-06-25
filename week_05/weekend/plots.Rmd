@@ -1,0 +1,173 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(CodeClanData)
+library(plotly)
+
+game_sales
+```
+
+```{r}
+game_sales %>% 
+  group_by(publisher, year_of_release) %>% 
+  summarise(num_games_released = n()) %>% 
+  plot_ly(x = ~ year_of_release,
+          y = ~ num_games_released,
+          color = ~ publisher,
+          mode = "lines", 
+          text = ~ publisher,
+          hovertemplate = '<b>%{text}',
+          showlegend = F) %>% 
+  highlight(on = "plotly_hover")
+```
+
+```{r}
+game_sales %>% 
+  group_by(publisher) %>% 
+  summarise(avg_rating = mean(user_score)) %>% 
+  ggplot(aes(reorder(publisher, -avg_rating), avg_rating)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+game_sales %>% 
+  filter(publisher == "Activision") %>% 
+  group_by(name) %>% 
+  summarise(user_score = mean(user_score),
+            critic_score = mean(critic_score)/10) %>% 
+  arrange(desc(user_score)) %>% 
+  slice_head(n = 10) %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(name, user_score), y = user_score), position = "dodge", fill = "darkolivegreen4") +
+  geom_point(aes(x = name, y = critic_score), position = "dodge", colour = "brown4") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+game_sales %>% 
+  filter(publisher == "Nintendo") %>% 
+  group_by(name) %>% 
+  summarise(user_score = mean(user_score),
+            critic_score = mean(critic_score)/10) %>% 
+  arrange(desc(user_score)) %>% 
+  slice_head(n = 10) %>% 
+  pivot_longer(user_score:critic_score, names_to = "Reviewer", values_to = "score") %>% 
+  ggplot() +
+  geom_col(aes(x = reorder(name, -score), y = score, fill = Reviewer),
+           position = "dodge",
+           #fill = "lavenderblush2"
+  ) +
+  # geom_point(aes(x = name, y = critic_score),
+  #            #position = "dodge",
+  #            colour = "deeppink2") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1),
+        panel.grid = element_blank()) +
+  labs(
+    title = "Top 10 Games Released by Selected Publisher",
+    x = "",
+    y = "Rating"
+  )
+```
+
+
+
+
+```{r}
+game_sales %>% 
+  group_by(publisher) %>% 
+  summarise(total_games = n()) %>% 
+  ggplot(aes(reorder(publisher, -total_games), total_games)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+game_sales %>% 
+  group_by(publisher, platform) %>% 
+  summarise(total_games = n()) %>% 
+  ggplot(aes(publisher, total_games, fill = platform)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+
+```{r}
+game_sales <- game_sales %>% 
+  mutate(platform_cat = case_when(
+    str_detect(platform, "PS") ~ "Playstation",
+    str_detect(platform, "X") ~ "Xbox",
+    str_detect(platform, "Wii") ~ "Nintendo Wii",
+    str_detect(platform, "GC") ~ "Nintendo Gamecube",
+    str_detect(platform, "GB") ~ "Nintendo Game Boy",
+    str_detect(platform, "DS") ~ "Nintendo DS",
+    .default = platform
+  ))
+```
+
+```{r}
+game_sales %>% 
+  group_by(publisher, platform_cat) %>% 
+  summarise(total_games = n()) %>% 
+  ggplot(aes(reorder(publisher, -total_games, sum), total_games, fill = platform_cat)) +
+  geom_col() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = c(
+    "Xbox" = "darkgreen",
+    "Playstation" = "blue",
+    "Nintendo Gamecube" = "red1",
+    "Nintendo DS" = "red2",
+    "Nintendo Wii" = "red3",
+    "Nintendo Game Boy" = "red4",
+    "PC" = "black")
+  )
+```
+# Games by publisher
+```{r}
+colour_scheme <- c(
+  "Xbox" = "darkgreen",
+  "Playstation" = "blue",
+  "Nintendo Gamecube" = "red1",
+  "Nintendo DS" = "red2",
+  "Nintendo Wii" = "red3",
+  "Nintendo Game Boy" = "red4",
+  "PC" = "black")
+
+game_sales %>% 
+  group_by(publisher, platform_cat) %>% 
+  summarise(total_games = n()) %>% 
+  plot_ly(y = ~ reorder(publisher, total_games, sum),
+          x = ~ total_games,
+          color = ~ platform_cat,
+          colors = colour_scheme,
+          type = "bar"
+  ) %>% 
+  layout(barmode = "stack",
+         title = "Number of Games Released by Publisher Across Each Platform",
+         yaxis = list(title = ""),
+         xaxis = list(title = "Number of Games released")
+  )
+```
+
+```{r}
+game_sales %>% 
+  filter(publisher == "Midway Games") %>% 
+  group_by(year_of_release) %>% 
+  summarise(total_games = n()) %>% 
+  ggplot(aes(year_of_release, total_games)) +
+  geom_line() +
+  theme_classic()
+```
+
+```{r}
+game_sales %>% 
+  group_by(platform_cat, platform) %>% 
+  summarise(total = n()) %>% 
+  ggplot(aes(platform_cat, total, fill = platform)) +
+  geom_col() +
+  geom_text(aes(label = platform))
+```
+
