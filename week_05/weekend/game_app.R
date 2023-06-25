@@ -45,9 +45,12 @@ unique(game_sales$platform)
 
 ## Theme ------------
 my_theme <- theme(
-  axis.text = element_text(size = 12, colour = "white"),
-  axis.title = element_text(size = 14, colour = "white"),
-  plot.title = element_text(size = 16, colour = "white"),
+  axis.text = element_text(size = 12, colour = "grey75"),
+  axis.title = element_text(size = 14, colour = "grey75"),
+  plot.title = element_text(size = 16, colour = "grey75"),
+  legend.text = element_text(size = 14, colour = "grey75"),
+  legend.title = element_text(size = 16, colour = "grey75"),
+  legend.background = element_rect(fill = "transparent"),
   panel.background = element_rect(fill = "transparent"),
   panel.border = element_rect(fill = "transparent", colour = "transparent"),
   plot.background = element_rect(fill = "transparent", colour = NA)
@@ -60,7 +63,7 @@ ui <- fluidPage(
   
   ## title -------
   titlePanel(
-    h1("Games", align = "center")
+    h1("Games Released across all Platforms", align = "center")
   ),
   
   ## Input row ---------
@@ -70,7 +73,7 @@ ui <- fluidPage(
       width = 6,
       selectInput(
         "publisher_input",
-        "Choose a Publisher",
+        h2("Choose a Publisher"),
         publishers
       )
     )
@@ -142,7 +145,7 @@ server <- function(input, output, session) {
       group_by(year_of_release) %>% 
       summarise(total_games = n()) %>% 
       ggplot(aes(year_of_release, total_games)) +
-      geom_line(colour = "white", size = 2) +
+      geom_line(colour = "grey75", size = 2) +
       theme(panel.grid = element_blank()) +
       scale_y_continuous(breaks = seq(0, 100, 2)) +
       scale_x_continuous(breaks = 1988:2016) +
@@ -206,11 +209,12 @@ server <- function(input, output, session) {
       ggplot(aes(x = reorder(publisher, -total_games, sum),
                  y = total_games,
                  fill = platform_cat)) +
-      geom_col(colour = "white") +
+      geom_col(colour = "grey75") +
       labs(
         title = "Number of Games Released by Publisher Across Each Platform",
         x = "",
-        y = "Number of Games released"
+        y = "Total Number of Games",
+        fill = "Platform"
       ) +
       scale_fill_manual(values = colour_scheme) +
       theme(axis.text.x = element_text(angle = 45, hjust = 1),
@@ -226,10 +230,10 @@ server <- function(input, output, session) {
       group_by(platform_cat, platform) %>% 
       summarise(total = n()) %>% 
       ggplot(aes(reorder(platform_cat, -total, sum), total, fill = platform, label = platform)) +
-      geom_col(colour = "white", show.legend = FALSE) +
+      geom_col(colour = "grey75", show.legend = FALSE) +
       scale_fill_manual(values = colour_scheme) +
       geom_text(
-        colour = "white",
+        colour = "grey75",
         size = 4,
         position = position_stack(vjust = 0.5)
       ) +
