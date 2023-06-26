@@ -243,20 +243,20 @@ server <- function(input, output, session) {
       game_sales %>% 
         group_by(publisher, platform_cat) %>% 
         summarise(total_games = n()) %>% 
-        ggplot(aes(y = reorder(publisher, -total_games, sum),
-                   x = total_games,
+        ggplot(aes(x = reorder(publisher, -total_games, sum),
+                   y = total_games,
                    fill = platform_cat)) +
         geom_col(colour = "grey75") +
         labs(
           title = "Number of Games Released by Publisher Across Each Platform",
-          y = "",
-          x = "Total Number of Games",
+          x = "",
+          y = "Total Number of Games",
           fill = "Platform"
         ) +
-        scale_x_continuous(breaks = seq(0, 1000, 100)) +
+        scale_y_continuous(breaks = seq(0, 1000, 100)) +
         scale_fill_manual(values = colour_scheme) +
         theme(
-          #axis.text.y = element_text(angle = 45, hjust = 1),
+          axis.text.x = element_text(angle = 60, hjust = 1),
           panel.grid = element_blank()
         ) +
         my_theme
