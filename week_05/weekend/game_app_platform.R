@@ -48,10 +48,10 @@ unique(game_sales$platform)
 ## Theme ------------
 my_theme <- theme(
   axis.text = element_text(size = 12, colour = "grey75"),
-  axis.title = element_text(size = 14, colour = "grey75"),
+  axis.title = element_text(size = 10, colour = "grey75"),
   plot.title = element_text(size = 16, colour = "grey75"),
-  legend.text = element_text(size = 14, colour = "grey75"),
-  legend.title = element_text(size = 16, colour = "grey75"),
+  legend.text = element_text(size = 10, colour = "grey75"),
+  legend.title = element_text(size = 12, colour = "grey75"),
   legend.background = element_rect(fill = "transparent"),
   panel.background = element_rect(fill = "transparent"),
   panel.border = element_rect(fill = "transparent", colour = "transparent"),
@@ -80,6 +80,8 @@ ui <- fluidPage(
       )
     ),
     
+    # Could add a selection between platform and genre
+    
     ### second column heading -----------
     column(
       width = 6,
@@ -97,7 +99,7 @@ ui <- fluidPage(
     # most informative.
     column(
       width = 6,
-      plotOutput("games_released_plot")
+      plotlyOutput("games_released_plot")
     ),
     
     ### games by publisher across platform ----------
@@ -106,7 +108,7 @@ ui <- fluidPage(
     # games released between publishers
     column(
       width = 6,
-      plotOutput("games_plot")
+      plotlyOutput("games_plot")
     )
   ),
   
@@ -125,7 +127,7 @@ ui <- fluidPage(
     # as these can often vary quite a bit
     column(
       width = 6,
-      plotOutput("top_games_plot")
+      plotlyOutput("top_games_plot")
     ),
     
     ### games per platform ----------
@@ -135,7 +137,7 @@ ui <- fluidPage(
     # The bars are stacked into the platform categories provided in the above graph
     column(
       width = 6,
-      plotOutput("platform_plot")
+      plotlyOutput("platform_plot")
     )
   )
 )
@@ -149,61 +151,73 @@ server <- function(input, output, session) {
   })
   
   ## games by time plot (top left) -------
-  output$games_released_plot <- renderPlot({
-    filtered_games() %>% 
-      group_by(year_of_release, platform_cat, .drop = FALSE) %>% 
-      summarise(total_games_plat = n()) %>% 
-      ungroup() %>% 
-      group_by(year_of_release) %>% 
-      mutate(total_games = sum(total_games_plat)) %>% 
-      ggplot() +
-      geom_line(aes(year_of_release, total_games_plat, colour = platform_cat),
-                size = 2,
-                linetype = "longdash") +
-      #geom_point(aes(year_of_release, total_games_plat, colour = platform_cat))+
-      geom_line(aes(year_of_release, total_games, colour = "Total"),
-                size = 2.5) +
-      #geom_point(aes(year_of_release, total_games, colour = "Total")) +
-      theme(panel.grid = element_blank()) +
-      scale_y_continuous(breaks = seq(0, 100, 5)) +
-      scale_x_continuous(breaks = seq(1988, 2016, 4), limits = c(1988, 2016)) +
-      scale_colour_manual(values = colour_scheme) +
-      labs(
-        title = "Number of Games Released per year",
-        x = "",
-        y = "Total Number of Games"
-      ) +
-      my_theme
-  }, bg = "transparent")
+  output$games_released_plot <- renderPlotly({
+    ggplotly(
+      filtered_games() %>% 
+        group_by(year_of_release, platform_cat, .drop = FALSE) %>% 
+        summarise(total_games_plat = n()) %>% 
+        ungroup() %>% 
+        group_by(year_of_release) %>% 
+        mutate(total_games = sum(total_games_plat)) %>% 
+        ggplot() +
+        geom_line(aes(year_of_release, total_games_plat, colour = platform_cat),
+                  size = 2,
+                  linetype = "longdash") +
+        #geom_point(aes(year_of_release, total_games_plat, colour = platform_cat))+
+        geom_line(aes(year_of_release, total_games, colour = "Total"),
+                  size = 2.5) +
+        #geom_point(aes(year_of_release, total_games, colour = "Total")) +
+        theme(panel.grid = element_blank()) +
+        scale_y_continuous(breaks = seq(0, 100, 5)) +
+        scale_x_continuous(breaks = seq(1988, 2016, 4)
+                           #,limits = c(1988, 2016)
+        ) +
+        scale_colour_manual(values = colour_scheme) +
+        labs(
+          title = "Number of Games Released per year",
+          x = "",
+          y = "Total Number of Games"
+        ) +
+        my_theme
+    )
+  }
+  #, bg = "transparent"
+  )
   
   ## top 10 games plot (bottom left) --------
-  output$top_games_plot <- renderPlot({
-    filtered_games() %>% 
-      group_by(name) %>% 
-      summarise(User = mean(user_score),
-                Critic = mean(critic_score)/10) %>% 
-      arrange(desc(User)) %>% 
-      slice_head(n = 10) %>% 
-      pivot_longer(User:Critic, names_to = "Reviewer", values_to = "Score") %>% 
-      ggplot() +
-      geom_col(aes(x = reorder(name, -Score),
-                   y = Score,
-                   fill = Reviewer),
-               position = "dodge",
-      ) +
-      scale_fill_manual(values = c("User" = "burlywood1",
-                                  "Critic" = "burlywood3")) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1),
-            panel.grid = element_blank()) +
-      labs(
-        title = "Top 10 Games Released by Selected Publisher",
-        x = "",
-        y = "Mean Rating"
-      ) +
-      my_theme
-  }, bg = "transparent") 
+  output$top_games_plot <- renderPlotly({
+    ggplotly(
+      filtered_games() %>% 
+        group_by(name) %>% 
+        summarise(User = mean(user_score),
+                  Critic = mean(critic_score)/10) %>% 
+        arrange(desc(User)) %>% 
+        slice_head(n = 10) %>% 
+        pivot_longer(User:Critic, names_to = "Reviewer", values_to = "Score") %>% 
+        ggplot() +
+        geom_col(aes(x = reorder(name, -Score),
+                     y = Score,
+                     fill = Reviewer),
+                 position = "dodge",
+        ) +
+        scale_fill_manual(values = c("User" = "burlywood1",
+                                     "Critic" = "burlywood3")) +
+        theme(axis.text.x = element_text(angle = 45, hjust = 1),
+              panel.grid = element_blank()) +
+        labs(
+          title = "Top 10 Games Released by Selected Publisher",
+          x = "",
+          y = "Mean Rating"
+        ) +
+        my_theme
+    )
+  }
+  #, bg = "transparent"
+  ) 
   
-  ## games by publisher plot (top right) ------------
+  ## games by publisher plot with plotly -> didn't match general theme 
+  # therefore used a simpler plot, could use ggplotly on ggplot object?
+  
   # output$games_plot <- renderPlotly({
   #   game_sales %>% 
   #     group_by(publisher, platform_cat) %>% 
@@ -223,51 +237,62 @@ server <- function(input, output, session) {
   #     layout(paper_bgcolor = "transparent")
   # })
   
-  output$games_plot <- renderPlot({
-    game_sales %>% 
-      group_by(publisher, platform_cat) %>% 
-      summarise(total_games = n()) %>% 
-      ggplot(aes(x = reorder(publisher, -total_games, sum),
-                 y = total_games,
-                 fill = platform_cat)) +
-      geom_col(colour = "grey75") +
-      labs(
-        title = "Number of Games Released by Publisher Across Each Platform",
-        x = "",
-        y = "Total Number of Games",
-        fill = "Platform"
-      ) +
-      scale_y_continuous(breaks = seq(0, 1000, 100)) +
-      scale_fill_manual(values = colour_scheme) +
-      theme(axis.text.x = element_text(angle = 45, hjust = 1),
-            panel.grid = element_blank()) +
-      my_theme
-  }, bg = "transparent")
+  ## games by publisher plot (top right) ------------
+  output$games_plot <- renderPlotly({
+    ggplotly(
+      game_sales %>% 
+        group_by(publisher, platform_cat) %>% 
+        summarise(total_games = n()) %>% 
+        ggplot(aes(y = reorder(publisher, -total_games, sum),
+                   x = total_games,
+                   fill = platform_cat)) +
+        geom_col(colour = "grey75") +
+        labs(
+          title = "Number of Games Released by Publisher Across Each Platform",
+          y = "",
+          x = "Total Number of Games",
+          fill = "Platform"
+        ) +
+        scale_x_continuous(breaks = seq(0, 1000, 100)) +
+        scale_fill_manual(values = colour_scheme) +
+        theme(
+          #axis.text.y = element_text(angle = 45, hjust = 1),
+          panel.grid = element_blank()
+        ) +
+        my_theme
+    )
+  }
+  #, bg = "transparent"
+  )
   
   
   
   ## games by platform (bottom right) --------
-  output$platform_plot <- renderPlot({
-    game_sales %>% 
-      group_by(platform_cat, platform) %>% 
-      summarise(total = n()) %>% 
-      ggplot(aes(reorder(platform_cat, -total, sum), total, fill = platform, label = platform)) +
-      geom_col(colour = "grey75", show.legend = FALSE) +
-      scale_fill_manual(values = colour_scheme) +
-      geom_text(
-        colour = "grey75",
-        size = 4,
-        position = position_stack(vjust = 0.5)
-      ) +
-      scale_y_continuous(breaks = seq(0, 1000, 100)) +
-      theme(panel.grid = element_blank()) +
-      labs(
-        title = "Games Released on Each Platform",
-        x = "Platform",
-        y = "Total Number of Games"
-      ) +
-      my_theme
-  }, bg = "transparent")
+  output$platform_plot <- renderPlotly({
+    ggplotly(
+      game_sales %>% 
+        group_by(platform_cat, platform) %>% 
+        summarise(total = n()) %>% 
+        ggplot(aes(reorder(platform_cat, -total, sum), total, fill = platform, label = platform)) +
+        geom_col(colour = "grey75", show.legend = FALSE) +
+        scale_fill_manual(values = colour_scheme) +
+        geom_text(
+          colour = "grey75",
+          size = 4,
+          position = position_stack(vjust = 0.5)
+        ) +
+        scale_y_continuous(breaks = seq(0, 1000, 100)) +
+        theme(panel.grid = element_blank()) +
+        labs(
+          title = "Games Released on Each Platform",
+          x = "Platform",
+          y = "Total Number of Games"
+        ) +
+        my_theme
+    )
+  }
+  #, bg = "transparent"
+  )
   
   
 }
