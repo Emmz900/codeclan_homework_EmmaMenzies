@@ -1,0 +1,112 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Week 6, day 3 - Homework
+
+## Question 1
+
+```{r}
+library(tidyverse)
+phone_data <- read_csv("data/20190928-items.csv") %>% 
+  janitor::clean_names()
+```
+
+```{r}
+skimr::skim(phone_data)
+```
+
+## Question 2
+Find the brand with the highest number of phones
+```{r}
+phone_data %>% 
+  group_by(brand) %>% 
+  summarise(total = n()) %>% 
+  arrange(desc(total))
+```
+Samsung have the highest number of phones. This is significantly higher than any other brand.
+
+## Question 3
+For your top brand, plot the distribution of phone ratings as a probability density, overlaying a fitted normal distribution. Do you think the normal distribution provides a good model of these ratings?
+```{r}
+phone_stats <- phone_data %>% 
+  filter(brand == "Samsung") %>%
+  summarise(
+    mean = mean(rating),
+    sd = sd(rating)
+  )
+
+
+phone_data %>% 
+  filter(brand == "Samsung") %>% 
+  select(rating) %>% 
+  ggplot(aes(rating)) +
+  geom_histogram(aes(y = after_stat(density)),
+                 colour = "white") +
+  stat_function(
+    fun = dnorm,
+    args = list(
+      mean = phone_stats$mean,
+      sd = phone_stats$sd
+    ),
+    colour = "blue"
+  )
+```
+Observations
+
+* The data is slightly left skewed, with most ratings around 3-4.
+* The normal distribution fits the general shape of the data reasonably well, although:
+  - The line is quite a bit higher than most of the histogram bars
+  - There are quite a few bars that go significantly higher than the Normal line. This is likely the cause of the line shift up.
+  - There are no ratings greater than 5 which leaves a blank area at that side of the normal distribution line.
+
+## Question 4
+We can be more quantitative in comparing the distribution of top brand ratings with a normal distribution. You calculated the mean() and sd() of your distribution in an earlier question. Use these values to calculate the proportions of ratings within one-, two- and three standard deviations of the mean. Compare these proportions with those you expect for a normal distribution.
+
+```{r}
+samsung_data <- phone_data %>% 
+  filter(brand == "Samsung") %>% 
+  select(rating)
+
+mean_sam <- phone_stats$mean
+sd_sam <- phone_stats$sd
+
+# samsung_data %>% 
+#   mutate(within_sd = case_when(
+#     rating >= mean_sam - sd_sam & rating <= mean_sam + sd_sam ~ "1",
+#     rating >= mean_sam - (2*sd_sam) & rating <= mean_sam + (2*sd_sam) ~ "2",
+#     rating >= mean_sam - (3*sd_sam) & rating <= mean_sam + (3*sd_sam) ~ "3",
+#     .default = ">3"
+#   )) %>% 
+#   group_by(within_sd) %>% 
+#   summarise(total = n()) %>% 
+#   mutate(prop = total/nrow(samsung_data))
+
+sigma_1 <- samsung_data %>% 
+  filter(rating >= mean_sam - sd_sam & rating <= mean_sam + sd_sam) %>% 
+  summarise(prop = n()/nrow(samsung_data))
+
+sigma_2 <- samsung_data %>% 
+  filter(rating >= mean_sam - (2*sd_sam) & rating <= mean_sam + (2*sd_sam)) %>% 
+  summarise(prop = n()/nrow(samsung_data))
+
+sigma_3 <- samsung_data %>% 
+  filter(rating >= mean_sam - (3*sd_sam) & rating <= mean_sam + (3*sd_sam)) %>% 
+  summarise(prop = n()/nrow(samsung_data))
+
+sigma_1
+sigma_2
+sigma_3
+```
+Found prop    | Expected prop
+--------------|---------------
+sigma 1 = 79% |  68%
+--------------|---------------
+sigma 2 = 91% |  95%
+--------------|---------------
+sigma 3 = 97% |  99.7%
+
+* The proportions found in the data do not match a normal distribution particularly well.
+* The data is slightly more spread out from the mean than a normal distribution.
+

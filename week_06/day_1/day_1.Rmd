@@ -7,9 +7,9 @@ output: html_notebook
 
 ## 1.1 The Titanic
 ```{r}
-library(tidyverse)
-library(gtools)
 library(janitor)
+library(gtools)
+library(tidyverse)
 source("prob.R")
 
 titanic_data <- read_csv("data/titanic.csv")
@@ -137,7 +137,8 @@ permutations(6, 6, repeats.allowed = TRUE) %>%
 
 * what is the probability I see one each of the numbers 6, 5, 4, 3, 2 and 1 on the dice regardless of order?
 ```{r}
-1 / factorial(6)
+# 1 / factorial(6)
+factorial(6) / 6 ^ 6
 ```
 
 ```{r}
@@ -146,12 +147,9 @@ options <- permutations(6, 6, repeats.allowed = TRUE) %>%
 
 options %>% 
   mutate(total = rowSums(.)) %>%
-  unite("rolls", V1:V6, sep = "") %>% 
-  #mutate(rolls = str_sort(rolls)) %>% 
-  #filter(rolls == "123456") %>% 
-  #summarise(p = n()/nrow(options))
+  filter(isin(., c(6, 5, 4, 3, 2, 1), ordered = FALSE)) %>% 
+  summarise(p = n()/nrow(options))
   
-  str_sort("1534")
 ```
 
 
