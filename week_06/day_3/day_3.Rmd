@@ -1,0 +1,133 @@
+---
+title: "Week 6, day 3"
+output: html_notebook
+---
+
+Homework
+```{r}
+library(tidyverse)
+library(janitor)
+library(infer)
+
+ames <- clean_names(read_csv("data/ames.csv"))
+```
+# Task 2
+Investigate the distribution of lot_area. Is the distribution roughly normal? If not, what problems do you find?
+```{r}
+ames %>% 
+  ggplot(aes(lot_area)) +
+  geom_histogram(colour = "white", bins = 40)
+```
+There appears to be data at very high lot areas which skewes the histogram. 
+Otherwise it is fairly close to normal.
+
+# Task 3
+Compute and visualise a bootstrap sampling distribution for the mean(lot_area) of the sold houses.
+```{r}
+bootstrap_ames <- ames %>% 
+  specify(response = lot_area) %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+```
+
+```{r}
+bootstrap_ames %>% 
+  visualise(bins = 30)
+```
+# Task 4.
+Use your bootstrap distribution to calculate a 95% CI for mean(lot_area), and visualise it on the distribution
+ 
+```{r}
+ames_ci_95 <- bootstrap_ames %>% 
+  get_ci(level = 0.95)
+
+ames_ci_95
+```
+
+```{r}
+bootstrap_ames %>% 
+  visualise(bins = 30) +
+  shade_ci(ames_ci_95)
+```
+# Task 5.
+You would like to know the mean(lot_area) of the sold houses with higher confidence.  
+Calculate the 99% CI for this variable (you can re-use your bootstrap distribution from above).   
+Is it narrower or broader than the 95%CI? Does that make sense?
+
+```{r}
+ames_ci_99 <- bootstrap_ames %>% 
+  get_ci(level = 0.99)
+
+ames_ci_99
+```
+
+```{r}
+bootstrap_ames %>% 
+  visualise(bins = 30) +
+  shade_ci(ames_ci_99)
+```
+The 99% CI is broader than the 95% CI. This is as expected.
+
+# Task 6.
+Calculate the point estimate of the mean(lot_area)
+```{r}
+ames %>% 
+  summarise(mean = mean(lot_area))
+```
+# Conclusion
+**The mean lot area is 10,148 with a 95% CI of [9,803,	10,531]
+
+# Extension
+Calculate a point estimate and 95% CI for the proportion of houses in the data built before 1920. Does the number of reps you use matter? 
+```{r}
+ames <- ames %>% 
+  mutate(built_before_1920 = case_when(
+    year_built < 1920 ~ "Yes",
+    .default = "No"
+  ))
+
+built_before_ames_200 <- ames %>% 
+  specify(response = built_before_1920, success = "Yes") %>% 
+  generate(reps = 200, type = "bootstrap") %>% 
+  calculate(stat = "prop")
+```
+
+```{r}
+built_before_ames_200 %>% 
+  get_ci(level = 0.95)
+
+built_before_ames_200 %>% 
+  summarise(prop = mean(stat))
+```
+6.0% [5.2%, 6.9%]
+
+```{r}
+built_before_ames_5000 <- ames %>% 
+  specify(response = built_before_1920, success = "Yes") %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "prop")
+```
+
+```{r}
+built_before_ames_5000 %>% 
+  get_ci(level = 0.95)
+
+built_before_ames_5000 %>% 
+  summarise(prop = mean(stat))
+```
+```{r}
+built_before_ames_50000 <- ames %>% 
+  specify(response = built_before_1920, success = "Yes") %>% 
+  generate(reps = 50000, type = "bootstrap") %>% 
+  calculate(stat = "prop")
+```
+
+```{r}
+built_before_ames_50000 %>% 
+  get_ci(level = 0.95)
+
+built_before_ames_50000 %>% 
+  summarise(prop = mean(stat))
+```
+
+
