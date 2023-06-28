@@ -108,5 +108,6 @@ sigma 2 = 91% |  95%
 sigma 3 = 97% |  99.7%
 
 * The proportions found in the data do not match a normal distribution particularly well.
-* The data is slightly more spread out from the mean than a normal distribution.
+* The data is slightly more bunched around the mean, and spread out at the tails than a normal distribution.
+
 
