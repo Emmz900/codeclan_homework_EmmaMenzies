@@ -1,0 +1,153 @@
+---
+title: "Hypothesis Testing and Probability Weekend Homework"
+author: Emma Menzies
+output: html_notebook
+---
+
+```{r setup}
+library(tidyverse)
+library(infer)
+data(msleep)
+```
+
+# 1.1
+## 1. Data
+```{r}
+glimpse(msleep)
+```
+## 2. Jabberwockies
+Jabberwockies sleep for around 7 hours a night, on average. Perform an appropriate statistical test to determine whether the mean sleep_total in the sampled population of animal types differs from the typical value for jabberwockies.
+
+alpha: 0.05  
+H0: mean(jabberwockies sleep total) == mean(dataset animals sleep total)   
+H1: mean(jabberwockies sleep total) != mean(dataset animals sleep total)
+
+```{r}
+null_dist <- msleep %>% 
+  select(sleep_total) %>% 
+  specify(response = sleep_total) %>% 
+  hypothesise(null = "point", mu = 7) %>% 
+  generate(reps = 5000, type = "bootstrap") %>% 
+  calculate(stat = "mean")
+```
+
+```{r}
+obs_stat <- mean(msleep$sleep_total)
+```
+
+```{r}
+null_dist %>% 
+  visualise() +
+  shade_p_value(obs_stat = obs_stat, direction = "both")
+```
+
+```{r}
+null_dist %>% 
+  get_p_value(obs_stat = obs_stat, direction = "both")
+```
+
+Since the p-value is less than 0.05 we can reject the null hypothesis. Therefore, the average number of hours Jabberwockies sleep is significantly different from the average in the datasetat a confidence level of 0.05. From the visualisation we can see that the average from the animals in the dataset is significantly higher than the average for Jabberwockies.
+
+## 3. Omnivores
+
+Perform an appropriate statistical test to determine whether omnivores sleep for significantly longer than herbivores, on average.
+
+alpha = 0.05  
+H0: mean(omnivores sleep) <= mean(herbivores sleep)
+H1: mean(omnivores sleep) > mean(herbivores sleep)
+
+```{r}
+null_dist <- msleep %>% 
+  filter(vore %in% c("herbi", "omni")) %>% 
+  specify(sleep_total ~ vore) %>% 
+  hypothesise(null = "independence") %>%  # is sleep independent of "vore"
+  generate(reps = 1000, type = "permute") %>% 
+  calculate(stat = "diff in means", order = c("herbi", "omni")) # herb - omni. if H1, stat < 0
+
+obs_stat <- msleep %>% 
+  filter(vore %in% c("herbi", "omni")) %>% 
+  specify(sleep_total ~ vore) %>% 
+  calculate(stat = "diff in means", order = c("herbi", "omni"))
+```
+
+
+```{r}
+null_dist %>% 
+  visualise() +
+  shade_p_value(obs_stat = obs_stat, direction = "left")
+```
+
+```{r}
+null_dist %>% 
+  get_p_value(obs_stat = obs_stat, direction = "left")
+```
+
+The p-value is greater than the alpha level therefore the null hypothesis cannot be rejected.  
+(There is an 11% chance of obtained a result more extreme than that observed under assumption of the null hypothesis)
+Omnivores do not sleep significantly longer on average than herbivores at a confidence level of 0.05.
+
+## 4. Domesticated
+Perform an appropriate statistical test to determine whether the proportion of domesticated animal types in the population of animal types is greater than 5%
+
+```{r}
+msleep_domestic <- msleep %>% 
+  select(conservation) %>% 
+  mutate(is_domestic = case_when(conservation == "domesticated" ~ TRUE, .default = FALSE))
+```
+alpha = 0.05
+H0: prop(domestic) <= 5%
+H1: prop(domestic) > 5%
+
+```{r}
+null_dist <- msleep_domestic %>% 
+  specify(response = is_domestic, success = "TRUE") %>% 
+  hypothesise(null = "point", p = 0.05) %>% 
+  generate(reps = 1000, type = "draw") %>% 
+  calculate(stat = "prop")
+
+obs_stat <- msleep_domestic %>% 
+  specify(response = is_domestic, success = "TRUE") %>% 
+  calculate(stat = "prop")
+```
+
+```{r}
+null_dist %>% 
+  visualise(bins = 20) +
+  shade_p_value(obs_stat = obs_stat, direction = "right")
+```
+
+```{r}
+null_dist %>% 
+  get_p_value(obs_stat = obs_stat, direction = "right")
+```
+
+The proportion of domesticated animals is significantly greater than 5% at a confidence level of 0.05.
+
+# 1.2
+## 1. Coffee Shop
+You work for a independent coffee shop. The boss tells you that she thinks that around 40% of people in the town (population 30,000) know of the coffee shop, but you are skeptical of the estimate and think that the actual percentage is higher. You conduct a random survey of 200 people in the town, asking if respondents are aware of your coffee shop. You want to use the sample to test the hypothesis that more than 40% of the town’s population have heard of the coffee shop.
+
+### Answer
+Test: One sample Hypothesis Test - Proportions
+H0: No more than 40% of the town's population have heard of the coffee shop
+    prop(have_heard) <= 0.4
+H1: More than 40% of the town's population have heard of the coffee shop
+    prop(have_heard) > 0.4
+Type: draw
+
+## 2. Website Design
+
+You work for a website design company and have performed an A/B test on the position of a banner on a website promoting a particular item.
+
+You selected five days at random last month and then randomly selected 200 of each sampled day’s users into group A and another 200 of that day’s users into group B. Group A continued to be shown the banner at the right hand side of the webpage (its usual position) while group B was shown the banner at the top of the page. You monitored each sampled user’s interactions with the website, in particular the ‘click through rate’ (CTR) on the banner, i.e. what proportion of sampled users clicked on the banner. You want to use the sampled data to test the hypothesis that website users overall are more likely to click on the banner if positioned at the top of the page
+
+### Answer
+Test: Two sample Hypothesis Test - Proportions
+H0: Website users are less or equally likely to click on the banner when it is at the top of the page
+    prop(B_clicked) <= prop(A_clicked)
+H1: Website users are more likely to click on the banner when it is at the top of the page
+    prop(B_clicked) > prop(A_clicked)
+Type: permute
+
+## 3. 
+You work as an analyst for a car manufacturing company - they have specific standards they must meet for standards and regulation purposes. You have been asked to check the quality control of the manufacture of a particular car part. You have been given data on a sample of 200 parts produced over the period of a week (the sampled parts were pulled at random from the production line and measured: the factory produced a lot more than 200 parts that week). The specification of the part stipulates a width of 145mm, and the manufacturing process is said to have ‘drifted’ if the mean width of parts differs significantly from 145mm. You want to use the sampled measurements to test whether the process overall has drifted.
