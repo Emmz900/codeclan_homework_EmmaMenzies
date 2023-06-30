@@ -129,9 +129,9 @@ You work for a independent coffee shop. The boss tells you that she thinks that 
 
 ### Answer
 Test: One sample Hypothesis Test - Proportions
-H0: No more than 40% of the town's population have heard of the coffee shop
+H0: *No more than 40%* of the town's population have heard of the coffee shop
     prop(have_heard) <= 0.4
-H1: More than 40% of the town's population have heard of the coffee shop
+H1: *More than 40%* of the town's population have heard of the coffee shop
     prop(have_heard) > 0.4
 Type: draw
 
@@ -143,11 +143,40 @@ You selected five days at random last month and then randomly selected 200 of ea
 
 ### Answer
 Test: Two sample Hypothesis Test - Proportions
-H0: Website users are less or equally likely to click on the banner when it is at the top of the page
+H0: Website users are *less or equally likely* to click on the banner when it is at the top of the page
     prop(B_clicked) <= prop(A_clicked)
-H1: Website users are more likely to click on the banner when it is at the top of the page
+H1: Website users are *more likely* to click on the banner when it is at the top of the page
     prop(B_clicked) > prop(A_clicked)
 Type: permute
 
-## 3. 
+## 3. Car Manufacturing
 You work as an analyst for a car manufacturing company - they have specific standards they must meet for standards and regulation purposes. You have been asked to check the quality control of the manufacture of a particular car part. You have been given data on a sample of 200 parts produced over the period of a week (the sampled parts were pulled at random from the production line and measured: the factory produced a lot more than 200 parts that week). The specification of the part stipulates a width of 145mm, and the manufacturing process is said to have ‘drifted’ if the mean width of parts differs significantly from 145mm. You want to use the sampled measurements to test whether the process overall has drifted.
+
+### Answer
+Test: One Sample, means
+H0: The mean width of parts *is not* significantly different from 145mm
+    mean(width) == 145mm
+H1: The mean width of parts *is* significantly different from 145mm
+    mean(width) != 145mm
+Type: bootstrap
+
+# 1.3
+## 1. Coffee Shop
+Significance level: 0.05, calculated p-value: 0.07
+
+Conclusion: The p-value is greater than the significance level, we cannot reject the null hypothesis.  
+The evidence does not support the belief that more than 40% of the town's population have heard of the coffee shop with a 0.05 confidence level.
+The p-value is close to the significance level therefore.....we would have found significance with a less restrictive significance level/the data is close to being significantly different from 40%.
+
+## 2. Website Design
+Significance level: 0.01, p-value: 0.006
+
+Conclusion: Since the p-value is less than the significance level we can reject the null hypothesis.   
+This indicates that we can be 95% confident the difference between the two groups is significant and not due to chance.  
+Therefore, we can conclude that website users are more likely to click on the banner when it is at the top of the page at a confidence level of 0.01.
+
+## 3. Car Manufacturing
+Significance level: 0.05, p-value: 0.55
+
+Conclusion: The p-value is greater than the significance level, we cannot reject the null hypothesis.
+The width of parts has not drifted at a confidence level of 0.05.
