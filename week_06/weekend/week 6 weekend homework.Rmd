@@ -180,3 +180,50 @@ Significance level: 0.05, p-value: 0.55
 
 Conclusion: The p-value is greater than the significance level, we cannot reject the null hypothesis.
 The width of parts has not drifted at a confidence level of 0.05.
+
+# Extension
+```{r}
+library(tidyverse)
+library(infer)
+transactions <- read_csv("data/online_retail_subset.csv")
+```
+$$sup(A→B)=P(A\ and\ B\ being\ purchased\ together) = \frac{number\ of\ transactions\ involving\ A\ and\ B}{total\ number\ of\ transactions}$$
+$$sup(A)=P(A)= \frac{number\ of\ transactions\ involving\ A}{total\ number\ of\ transactions}$$
+$$conf(A→B)=\frac{P(A\ and\ B\ being\ purchased\ together)}{P(A\ being\ purchased)}$$
+$$lift(A→B)=\frac{sup(A→B)}{sup(A)×sup(B)}$$
+
+* item A - ‘HEART OF WICKER SMALL’ (StockCode 22469)
+* item B - ‘LARGE CAKE TOWEL PINK SPOTS’ (StockCode 21110)
+
+
+```{r}
+transactions <- janitor::clean_names(transactions)
+
+a_purchases <- transactions %>% 
+  filter(stock_code == 22469) %>% 
+  summarise(n_distinct(invoice_no)) %>% 
+  pull()
+
+b_purchases <- transactions %>% 
+  filter(stock_code == 21110) %>% 
+  summarise(n_distinct(invoice_no)) %>% 
+  pull()
+
+total_purchases <- transactions %>% 
+  summarise(n_distinct(invoice_no)) %>% 
+  pull()
+
+a_and_b_purchases <- transactions %>% 
+  filter(stock_code == 22469 | stock_code == 21110)
+  
+```
+## 1. Support for A
+```{r}
+sup_a <- a_purchases/total_purchases
+```
+## Question 2.
+Calculate the support and confidence for rule (A→B)
+
+
+## Question 3.
+Calculate the lift for (A→B)
