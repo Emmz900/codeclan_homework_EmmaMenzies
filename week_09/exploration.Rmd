@@ -1,0 +1,332 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(here)
+```
+
+```{r}
+scotland_cancer <- clean_names(read_csv(here("raw_data/incidence_at_scotland_level.csv")))
+health_board_cancer <- clean_names(read_csv(here("raw_data/incidence_by_health_board.csv")))
+summary_health_board_cancer <- clean_names(read_csv(here("raw_data/five_year_summary_health_board.csv")))
+```
+
+```{r}
+scotland_cancer
+```
+```{r}
+# scotland_cancer_clean <- scotland_cancer %>% 
+#   select(cancer_site:incidences_all_ages) %>% 
+#   rename("incidences_age90andover" = "incidences_age90and_over",
+#          "incidences_age_all" = "incidences_all_ages") %>% 
+#   pivot_longer(starts_with("incidences"), names_to = "age_group", values_to = "incedences") %>% 
+#   mutate(age_group = factor(str_remove(str_extract(age_group, "[a-z0-9A-Z]+$"), "age")))
+
+scotland_rates_clean <- scotland_cancer %>% 
+  select(cancer_site:year, incidence_rate_age_under5:incidence_rate_age90and_over) %>% 
+  pivot_longer(starts_with("incidence_rate"), names_prefix = "incidence_rate_age",
+               names_to = "age_group", values_to = "incidence_rate") %>% 
+  mutate(age_group = str_replace_all(age_group, "to", "-")) %>% 
+  mutate(age_group = str_remove(age_group, "_")) %>% 
+  mutate(age_group = factor(age_group, levels = c("under5", "5-9", "10-14", "15-19",
+                                                  "20-24", "25-29", "30-34", "35-39",
+                                                  "40-44", "45-49", "50-54", "55-59",
+                                                  "60-64", "65-69", "70-74", "75-79",
+                                                  "80-84", "85-89", "90andover")))
+```
+
+```{r}
+scotland_rates_clean %>% 
+  filter(sex_qf == "d", cancer_site == "All cancer types") %>% 
+  #filter(is.na(age_group))
+  ggplot(aes(year, incidence_rate))+
+  geom_line()+
+  facet_wrap(~age_group)
+```
+```{r}
+scotland_rates_clean %>% 
+  filter(is.na(sex_qf), cancer_site == "All cancer types") %>%
+  group_by(year, sex) %>% 
+  summarise(incidence_rate = mean(incidence_rate)) %>% 
+  ggplot(aes(year, incidence_rate))+
+  geom_line()+
+  facet_wrap(~sex)
+```
+
+
+```{r}
+scotland_rates_clean %>% 
+  filter(sex_qf == "d", cancer_site == "All cancer types") %>% 
+  group_by(age_group) %>% 
+  summarise(average_rate = mean(incidence_rate)) %>% 
+  ggplot(aes(age_group, average_rate))+
+  geom_line(group = 1)
+```
+
+
+```{r}
+scotland_rates_clean %>% 
+  filter(is.na(sex_qf) & cancer_site != "All cancer types") %>% 
+  group_by(age_group, cancer_site, sex) %>% 
+  summarise(rate = mean(incidence_rate)) %>% 
+  ungroup() %>% 
+  group_by(age_group, sex) %>% 
+  slice_max(rate)
+```
+
+## Questions
+
+* How many per year getting cancer?
+* What type are they getting?
+* How long they are living? Mortality/morbidity (related to cancer type)
+
+## Early Findings
+
+* Cancer prevalence hasn't significantly changed over time
+* Cancer rates increase with age
+* Cancer types vary with sex and age with skin, breast, and cervix being the most common
+
+```{r}
+borders_cancer <- health_board_cancer %>% 
+  filter(hb == "S08000016")
+
+borders_cancer
+```
+# Cancer rates over time, borders
+```{r}
+borders_cancer %>% 
+  select(cancer_site:crude_rate, easr, wasr) %>% 
+  filter(is.na(sex_qf) & cancer_site == "All cancer types") %>% 
+  # group_by(sex, year) %>% 
+  # summarise(avg_incidences = mean(incidences_all_ages)) %>% 
+  ggplot(aes(year, incidences_all_ages, colour = sex)) +
+  geom_line(show.legend = FALSE) +
+  geom_smooth(method = lm, se = FALSE) +
+  facet_wrap(~sex) +
+  labs(
+    title = "Incidences of Cancer in NHS Borders by Sex",
+    x = "Year",
+    y = "Incidences"
+  ) +
+  theme_minimal()
+  #+
+#geom_line(aes(y = easr)) +
+#geom_line(aes(y = wasr))
+```
+Incidences have been increasing.  
+Have there been drives every three years for women to detect cancer??
+
+
+```{r}
+borders_cancer %>% 
+  select(cancer_site:crude_rate) %>% 
+  filter(sex == "Females" & cancer_site != "All cancer types") %>% 
+  group_by(cancer_site) %>% 
+  summarise(avg = mean(incidences_all_ages)) %>% 
+  arrange(desc(avg))
+```
+
+```{r}
+borders_cancer %>% 
+  select(cancer_site:crude_rate) %>% 
+  filter(sex == "Females" & cancer_site == "Breast") %>% 
+  # group_by(cancer_site, year) %>% 
+  # summarise(avg_incidences = mean(incidences_all_ages)) %>% 
+  ggplot(aes(year, incidences_all_ages)) +
+  geom_line(show.legend = FALSE, colour = "dodgerblue")  +
+  labs(
+    title = "Breast Cancer Incidence in NHS Borders",
+    x = "Year",
+    y = "Incidences"
+  ) +
+  theme_minimal()
+```
+
+
+```{r}
+borders_cancer %>% 
+  filter(is.na(sex_qf) & cancer_site != "All cancer types") %>% 
+  group_by(cancer_site, sex) %>% 
+  summarise(rate = mean(incidences_all_ages)) %>% 
+  ungroup() %>% 
+  group_by(sex) %>% 
+  slice_max(rate)
+```
+Breast and skin are the most common cancers in the borders
+
+
+```{r}
+summary_health_board_cancer
+```
+```{r}
+borders_2017_2021 <- summary_health_board_cancer %>% 
+  filter(hb == "S08000016") %>% 
+  select(cancer_site:incidences_all_ages, -year) %>% 
+  rename("incidences_age85andover" = "incidences_age85and_over",
+         "incidences_age_all" = "incidences_all_ages") %>%
+  pivot_longer(starts_with("incidences"), names_to = "age_group", values_to = "incidences") %>%
+  mutate(age_group = str_remove(str_extract(age_group, "[a-z0-9A-Z]+$"), "age")) %>% 
+  mutate(age_group = str_replace_all(age_group, "to", "-")) %>% 
+  mutate(age_group = str_remove(age_group, "_")) %>% 
+  mutate(age_group = factor(age_group, levels = c("under5", "5-9", "10-14", "15-19",
+                                                  "20-24", "25-29", "30-34", "35-39",
+                                                  "40-44", "45-49", "50-54", "55-59",
+                                                  "60-64", "65-69", "70-74", "75-79",
+                                                  "80-84", "85andover", "all")))
+```
+
+```{r}
+borders_2017_2021 %>% 
+  filter(sex_qf == "d", cancer_site == "All cancer types", age_group != "all") %>% 
+  ggplot(aes(age_group, incidences))+
+  geom_line(group = 1)
+```
+```{r}
+borders_2017_2021 %>% 
+  filter(is.na(sex_qf) & cancer_site != "All cancer types" & incidences > 0) %>% 
+  group_by(age_group, cancer_site, sex) %>% 
+  summarise(rate = mean(incidences)) %>% 
+  ungroup() %>% 
+  group_by(age_group, sex) %>% 
+  slice_max(rate)
+```
+
+```{r}
+total_per_cancer <- borders_2017_2021 %>% 
+  filter(!is.na(sex_qf) & cancer_site != "All cancer types" & age_group == "all") %>% 
+  group_by(cancer_site) %>% 
+  summarise(total = sum(incidences)) %>% 
+  arrange(desc(total)) %>% 
+  mutate(cancer_type = case_when(
+    str_detect(cancer_site, "cell carcinoma|Non-melanoma skin") ~ "Non-melanoma skin cancer",
+    str_detect(cancer_site, "Colo|Rectum") ~ "Colorectal cancer",
+    str_detect(cancer_site, "brain") ~ "All brain and CNS tumours",
+    str_detect(cancer_site, "leukaemia") ~ "Leukaemias",
+    str_detect(cancer_site, "Lip|Oroph|Oral|Mouth|Larynx|Salivary|Head|Tongue") ~ "Head and neck",
+    str_detect(cancer_site, "lymphoma") ~ "Lymphomas",
+    str_detect(cancer_site, "(?i)Bone|connective") ~ "Bone and Connective tissue",
+    .default = cancer_site
+  )) 
+
+total_per_cancer %>% 
+  filter(!cancer_site %in% c("Non-melanoma skin cancer", "Colorectal cancer", 
+                             "All brain and CNS tumours", "Leukaemias",
+                             "Head and neck", "Lymphomas", "Bone and Connective tissue")) %>% 
+  group_by(cancer_type) %>% 
+  summarise(total = sum(total)) %>% 
+  arrange(desc(total))
+```
+
+```{r}
+borders_2017_2021 %>% 
+  filter(str_detect(cancer_site, "leukaemia")) %>% 
+  distinct(cancer_site)
+142 == 82+60
+```
+# Most common cancers
+```{r}
+total_per_cancer %>% 
+  filter(!cancer_site %in% c("Non-melanoma skin cancer", "Colorectal cancer", 
+                             "All brain and CNS tumours", "Leukaemias",
+                             "Head and neck", "Lymphomas", "Bone and Connective tissue")) %>% 
+  group_by(cancer_type) %>% 
+  summarise(total = sum(total)) %>% 
+  arrange(desc(total)) %>% 
+  head(10) %>% 
+  #mutate(over_500 = case_when(total > 500 ~ TRUE, .default = FALSE)) %>% 
+  ggplot(aes(reorder(cancer_type, total), total)) +
+  geom_col(show.legend = FALSE, fill = "dodgerblue") +
+  coord_flip() +
+  scale_y_continuous(expand = c(0, 10), breaks = seq(0, 1800, 200)) +
+  #scale_fill_manual(values = c("TRUE" = "red", "FALSE" = "blue")) +
+  labs(
+    title = "Most common categories of cancer in NHS Borders",
+    subtitle = "2017-2021",
+    y = "Total Incidences",
+    x = ""
+  ) +
+  theme_minimal() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_line(colour = "grey80"),
+        panel.grid.minor.x = element_line(colour = "grey90"))
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+```{r}
+total_per_cancer %>% 
+  filter(!cancer_site %in% c("Non-melanoma skin cancer", "Colorectal cancer", 
+                             "All brain and CNS tumours", "Leukaemias",
+                             "Head and neck", "Lymphomas", "Bone and Connective tissue")) %>% 
+  group_by(cancer_type) %>% 
+  summarise(yearly_average = sum(total)/5) %>% 
+  arrange(desc(yearly_average)) %>% 
+  head(10) %>% 
+  #mutate(over_500 = case_when(total > 500 ~ TRUE, .default = FALSE)) %>% 
+  ggplot(aes(reorder(cancer_type, yearly_average), yearly_average)) +
+  geom_col(show.legend = FALSE, fill = "dodgerblue") +
+  coord_flip() +
+  scale_y_continuous(expand = c(0, 10), breaks = seq(0, 1800, 50)) +
+  #scale_fill_manual(values = c("TRUE" = "red", "FALSE" = "blue")) +
+  labs(
+    title = "Most common categories of cancer in NHS Borders",
+    subtitle = "2017-2021",
+    y = "Average Yearly Incidences",
+    x = ""
+  ) +
+  theme_minimal() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_line(colour = "grey80"),
+        panel.grid.minor.x = element_line(colour = "grey90"))
+  #theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
+# Total cancer incidences
+```{r}
+borders_2017_2021 %>% 
+  filter(cancer_site == "All cancer types", sex == "All", age_group == "all")
+```
+4156
+```{r}
+4156/5
+```
+
+
+# Comparison to Scotland as a whole
+```{r}
+scotland_rates <- scotland_rates_clean %>% 
+  filter(year >= 2017 & sex == "All") %>% 
+  group_by(cancer_site) %>% 
+  summarise(scotland_rate = mean(incidence_rate))
+```
+```{r}
+  borders_cancer %>% 
+  filter(sex == "All" & year >= 2017) %>% 
+  group_by(cancer_site) %>% 
+  summarise(borders_rate = mean(crude_rate)) %>% 
+  full_join(scotland_rates, by = "cancer_site") %>% 
+  mutate(diff = (scotland_rate - borders_rate)/scotland_rate *100,
+         diff_type = case_when(
+           diff < 0 ~ "less",
+           diff > 0 ~ "more",
+           .default = "same"
+         )) %>% 
+  filter(diff > 30 | diff < -30) %>% 
+  arrange(diff) %>% 
+  ggplot(aes(diff, reorder(cancer_site, diff), fill = diff_type)) +
+  geom_col(show.legend = FALSE) +
+  labs(
+    x = "Percentage Difference from Scottish Incidence Rate",
+    y = "",
+    title = "Comparison of Cancer Rates in NHS Borders\nCompared to Scotland as a whole",
+    subtitle = "Selection of cancers which differ the most"
+  ) +
+  theme_minimal()
+  
+```
+
+
+

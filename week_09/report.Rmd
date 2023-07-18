@@ -1,0 +1,173 @@
+---
+title: "Cancer Rates in NHS Borders"
+author: "Emma Menzies"
+output:
+  html_document:
+    code_folding: hide
+---
+```{r setup}
+# Libraries
+library(tidyverse)
+library(janitor)
+library(here)
+
+# Raw Data
+scotland_cancer <- clean_names(read_csv(here("raw_data/incidence_at_scotland_level.csv")))
+health_board_cancer <- clean_names(read_csv(here("raw_data/incidence_by_health_board.csv")))
+summary_health_board_cancer <- clean_names(read_csv(here("raw_data/five_year_summary_health_board.csv")))
+
+# Cleaning
+## Scotland
+scotland_rates_clean <- scotland_cancer %>% 
+  select(cancer_site:year, incidence_rate_age_under5:incidence_rate_age90and_over) %>% 
+  pivot_longer(starts_with("incidence_rate"), names_prefix = "incidence_rate_age",
+               names_to = "age_group", values_to = "incidence_rate") %>% 
+  mutate(age_group = str_replace_all(age_group, "to", "-")) %>% 
+  mutate(age_group = str_remove(age_group, "_")) %>% 
+  mutate(age_group = factor(age_group, levels = c("under5", "5-9", "10-14", "15-19",
+                                                  "20-24", "25-29", "30-34", "35-39",
+                                                  "40-44", "45-49", "50-54", "55-59",
+                                                  "60-64", "65-69", "70-74", "75-79",
+                                                  "80-84", "85-89", "90andover")))
+
+## Borders Since 1997
+borders_cancer <- health_board_cancer %>% 
+  filter(hb == "S08000016")
+
+## Borders Summary
+borders_2017_2021 <- summary_health_board_cancer %>% 
+  filter(hb == "S08000016") %>% 
+  select(cancer_site:incidences_all_ages, -year) %>% 
+  rename("incidences_age85andover" = "incidences_age85and_over",
+         "incidences_age_all" = "incidences_all_ages") %>%
+  pivot_longer(starts_with("incidences"), names_to = "age_group", values_to = "incidences") %>%
+  mutate(age_group = str_remove(str_extract(age_group, "[a-z0-9A-Z]+$"), "age")) %>% 
+  mutate(age_group = str_replace_all(age_group, "to", "-")) %>% 
+  mutate(age_group = str_remove(age_group, "_")) %>% 
+  mutate(age_group = factor(age_group, levels = c("under5", "5-9", "10-14", "15-19",
+                                                  "20-24", "25-29", "30-34", "35-39",
+                                                  "40-44", "45-49", "50-54", "55-59",
+                                                  "60-64", "65-69", "70-74", "75-79",
+                                                  "80-84", "85andover", "all")))
+
+## Borders Cancer Types Summary
+total_per_cancer <- borders_2017_2021 %>% 
+  filter(!is.na(sex_qf) & cancer_site != "All cancer types" & age_group == "all") %>% 
+  group_by(cancer_site) %>% 
+  summarise(total = sum(incidences)) %>% 
+  arrange(desc(total)) %>% 
+  mutate(cancer_type = case_when(
+    str_detect(cancer_site, "cell carcinoma|Non-melanoma skin") ~ "Non-melanoma skin cancer",
+    str_detect(cancer_site, "Colo|Rectum") ~ "Colorectal cancer",
+    str_detect(cancer_site, "brain") ~ "All brain and CNS tumours",
+    str_detect(cancer_site, "leukaemia") ~ "Leukaemias",
+    str_detect(cancer_site, "Lip|Oroph|Oral|Mouth|Larynx|Salivary|Head|Tongue") ~ "Head and neck",
+    str_detect(cancer_site, "lymphoma") ~ "Lymphomas",
+    str_detect(cancer_site, "(?i)Bone|connective") ~ "Bone and Connective tissue",
+    .default = cancer_site
+  )) 
+```
+# Introduction
+
+# Findings
+
+## Number of Incidences
+
+NHS Borders has, on average, **831 cancer cases per year**.  
+This has been increasing since 1997.
+
+```{r}
+borders_cancer %>% 
+  select(cancer_site:crude_rate, easr, wasr) %>% 
+  filter(is.na(sex_qf) & cancer_site == "All cancer types") %>% 
+  ggplot(aes(year, incidences_all_ages, colour = sex)) +
+  geom_line(show.legend = FALSE) +
+  geom_smooth(method = lm, se = FALSE) +
+  facet_wrap(~sex) +
+  labs(
+    title = "Incidences of Cancer in NHS Borders by Sex",
+    x = "Year",
+    y = "Incidences"
+  ) +
+  theme_minimal()
+```
+These upward trends highlight that it is important to continue increasing capacity to treat and care for these individuals.  
+
+There is a seasonal trend in the female data which suggests a significant increase in cancer **every three years**. This can be explained by the type of cancer driving the trend: **Breast Cancer**.
+```{r}
+borders_cancer %>% 
+  select(cancer_site:crude_rate) %>% 
+  filter(sex == "Females" & cancer_site == "Breast") %>% 
+  ggplot(aes(year, incidences_all_ages)) +
+  geom_line(show.legend = FALSE, colour = "dodgerblue")  +
+  labs(
+    title = "Breast Cancer Incidence in NHS Borders",
+    x = "Year",
+    y = "Incidences"
+  ) +
+  theme_minimal()
+```
+Breast Cancer screening is recommended every three years to women between 50 - 70 years old. The data suggests screening tends to take place in the same year for most of the NHS Borders patients, and that this is being highly successfulk in identifying breast cancers.
+
+## Types of Cancer
+
+It is important to consider the type of cancers which are most prevelant and are therefore likely to result in the most strain on individual departments.
+```{r}
+total_per_cancer %>% 
+  filter(!cancer_site %in% c("Non-melanoma skin cancer", "Colorectal cancer", 
+                             "All brain and CNS tumours", "Leukaemias",
+                             "Head and neck", "Lymphomas", "Bone and Connective tissue")) %>% 
+  group_by(cancer_type) %>% 
+  summarise(total = sum(total)) %>% 
+  arrange(desc(total)) %>% 
+  head(10) %>% 
+  ggplot(aes(reorder(cancer_type, total), total)) +
+  geom_col(show.legend = FALSE, fill = "dodgerblue") +
+  coord_flip() +
+  scale_y_continuous(expand = c(0, 10), breaks = seq(0, 1800, 200)) +
+  labs(
+    title = "Most common categories of cancer in NHS Borders",
+    subtitle = "2017-2021",
+    y = "Total Incidences",
+    x = ""
+  ) +
+  theme_minimal() +
+  theme(panel.grid.major.y = element_blank(),
+        panel.grid.minor.y = element_blank(),
+        panel.grid.major.x = element_line(colour = "grey80"),
+        panel.grid.minor.x = element_line(colour = "grey90"))
+```
+*This shows the total number of incidences over each cancer type across all 5 years.*
+
+Non-melanoma Skin Cancer is by far the most common type of cancer seen. This includes predominantly basal and squamous cell carcinoma.
+
+INTRO
+```{r}
+  borders_cancer %>% 
+  filter(sex == "All" & year >= 2017) %>% 
+  group_by(cancer_site) %>% 
+  summarise(borders_rate = mean(crude_rate)) %>% 
+  full_join(scotland_rates, by = "cancer_site") %>% 
+  mutate(diff = (scotland_rate - borders_rate)/scotland_rate *100,
+         diff_type = case_when(
+           diff < 0 ~ "less",
+           diff > 0 ~ "more",
+           .default = "same"
+         )) %>% 
+  filter(diff > 40 | diff < -40) %>% 
+  arrange(diff) %>% 
+  ggplot(aes(diff, reorder(cancer_site, diff), fill = diff_type)) +
+  geom_col(show.legend = FALSE) +
+  labs(
+    x = "Percentage Difference from Scottish Incidence Rate",
+    y = "",
+    title = "Comparison of Cancer Rates in NHS Borders\nCompared to Scotland as a whole",
+    subtitle = "Selection of cancers which differ the most"
+  ) +
+  theme_minimal()
+```
+WORDS
+
+# Conclusions
+
+
