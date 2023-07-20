@@ -303,30 +303,36 @@ scotland_rates <- scotland_rates_clean %>%
   summarise(scotland_rate = mean(incidence_rate))
 ```
 ```{r}
-  borders_cancer %>% 
+borders_cancer %>% 
   filter(sex == "All" & year >= 2017) %>% 
   group_by(cancer_site) %>% 
-  summarise(borders_rate = mean(crude_rate)) %>% 
+  summarise(borders_rate = mean(crude_rate),
+            borders_total = mean(incidences_all_ages)) %>% 
   full_join(scotland_rates, by = "cancer_site") %>% 
-  mutate(diff = (scotland_rate - borders_rate)/scotland_rate *100,
+  mutate(diff = (borders_rate - scotland_rate)/scotland_rate *100,
          diff_type = case_when(
            diff < 0 ~ "less",
            diff > 0 ~ "more",
            .default = "same"
          )) %>% 
-  filter(diff > 30 | diff < -30) %>% 
+  filter(diff > 0) %>% 
   arrange(diff) %>% 
-  ggplot(aes(diff, reorder(cancer_site, diff), fill = diff_type)) +
-  geom_col(show.legend = FALSE) +
+  ggplot(aes(diff, reorder(cancer_site, diff), fill = borders_total)) +
+  geom_col() +
   labs(
     x = "Percentage Difference from Scottish Incidence Rate",
     y = "",
     title = "Comparison of Cancer Rates in NHS Borders\nCompared to Scotland as a whole",
-    subtitle = "Selection of cancers which differ the most"
+    subtitle = "Selection of cancers which differ the most",
+    fill = "Average Annual\nIncidences\nin Borders"
   ) +
   theme_minimal()
   
 ```
 
+```{r}
+borders_cancer %>% 
+  filter(cancer_site == "Chronic myeloid leukaemia" & sex == "All")
+```
 
 
