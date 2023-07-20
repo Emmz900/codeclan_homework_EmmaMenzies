@@ -503,6 +503,9 @@ total_per_cancer &lt;- borders_2017_2021 %&gt;%
     str_detect(cancer_site, &quot;(?i)Bone|connective&quot;) ~ &quot;Bone and Connective tissue&quot;,
     .default = cancer_site
   )) </code></pre>
+<p><strong>Question:</strong> In order to help inform the planning for
+provision of cancer treatment services in NHS Borders, we would like to
+gain better understanding of the incidence of cancer in NHS Borders.</p>
 <div id="introduction" class="section level1">
 <h1>Introduction</h1>
 <p>NHS Borders provides healthcare services within the southeast region
@@ -518,8 +521,8 @@ continued provision of care.</p>
 <p><em>Data taken from Public Health Scotland.</em></p>
 <div id="number-of-incidences" class="section level2">
 <h2>Number of Incidences</h2>
-<p>NHS Borders has, on average, <strong>831 cancer cases per
-year</strong>.<br />
+<p>NHS Borders has, on average over the last 5 years, <strong>831 cancer
+cases per year</strong>.<br />
 This has been increasing since 1997.</p>
 <pre class="r"><code>borders_cancer %&gt;% 
   select(cancer_site:crude_rate, easr, wasr) %&gt;% 

@@ -67,6 +67,8 @@ total_per_cancer <- borders_2017_2021 %>%
     .default = cancer_site
   )) 
 ```
+**Question:** In order to help inform the planning for provision of cancer treatment services in NHS Borders, we would like to gain better understanding of the incidence of cancer in NHS Borders.
+
 # Introduction
 
 NHS Borders provides healthcare services within the southeast region of Scotland.
@@ -81,7 +83,7 @@ It is important to continue this excellent service and prepare for continued pro
 
 ## Number of Incidences
 
-NHS Borders has, on average, **831 cancer cases per year**.  
+NHS Borders has, on average over the last 5 years, **831 cancer cases per year**.  
 This has been increasing since 1997.
 
 ```{r, message=FALSE, warning=FALSE}
