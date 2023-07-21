@@ -54,7 +54,8 @@ my_theme <- theme(
   legend.title = element_text(size = 12, colour = "grey75"),
   legend.background = element_rect(fill = "transparent"),
   panel.background = element_rect(fill = "transparent"),
-  panel.border = element_rect(fill = "transparent", colour = "transparent"),
+  panel.border = element_rect(fill = "transparent",
+                              colour = "transparent"),
   plot.background = element_rect(fill = "transparent", colour = NA)
 )
 
