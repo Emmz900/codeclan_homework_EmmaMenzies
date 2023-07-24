@@ -1,0 +1,93 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Libraries
+```{r}
+library(tidyverse)
+library(broom)
+library(ggfortify)
+library(modelr)
+```
+
+# 1. MVP
+
+## Load data
+
+```{r}
+project <- read_csv("data/project_management.csv")
+```
+## Plot
+```{r}
+project %>% 
+  ggplot(aes(estimated_length, actual_length)) +
+  geom_point()
+```
+## r
+```{r}
+project %>% 
+  summarise(r = cor(estimated_length, actual_length))
+```
+## linear regression
+```{r}
+model <- lm(actual_length ~ estimated_length, project)
+model
+```
+## interpret
+```{r}
+glance(model)
+```
+* The slope is 1.223. If the estimates were accurate this would be 1. A value greater than 1 suggests that for greater estimated times, the actual time moves further away from our estimate, and actually takes longer.
+
+The r^2 value is 0.6475. This suggests that the model explains more than half the data, but this is not particularly high. Hence the model could be a better fit.
+
+## statistical significance
+```{r}
+autoplot(model)
+```
+The linear model is ok for our data.
+
+The p-value is <0.001 and therefore this relationship is statistically significant.
+
+# 2. Extension
+```{r}
+project %>% 
+  ggplot(aes(estimated_length, actual_length)) +
+  geom_point() +
+  geom_text(label = 1:nrow(project))
+```
+Outliers: 5, influential.
+
+```{r}
+autoplot(model, which = 4)
+```
+```{r}
+project_ni <- project %>% 
+  slice(-31)
+
+project_i <- project %>% 
+  slice(-5)
+
+model_ni <- lm(actual_length ~ estimated_length, project_ni)
+model_i <- lm(actual_length ~ estimated_length, project_i)
+
+model
+model_ni
+model_i
+```
+```{r}
+project %>% 
+  add_predictions(model) %>% 
+  ggplot(aes(estimated_length, actual_length)) +
+  geom_point() +
+  geom_line(aes(y = pred), col = "green") +
+  geom_abline(intercept = model_ni$coefficients[1],
+              slope = model_ni$coefficients[2],
+              col = "red") +
+  geom_abline(intercept = model_i$coefficients[1],
+              slope = model_i$coefficients[2],
+              col = "blue")
+```
+
+
