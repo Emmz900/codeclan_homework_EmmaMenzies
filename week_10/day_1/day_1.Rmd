@@ -61,6 +61,7 @@ Outliers: 5, influential.
 
 ```{r}
 autoplot(model, which = 4)
+autoplot(model, which = 5)
 ```
 ```{r}
 project_ni <- project %>% 
@@ -90,4 +91,19 @@ project %>%
               col = "blue")
 ```
 
+# Homework review
+```{r}
+par(mfrow = c(2, 3))
+plot(model)
+hist(model$residuals)
+```
+```{r}
+autoplot(model, which = 1:6)
+autoplot(model, which = 3)
+```
+## Assumptions of a linear regression
 
+* The the relationship is linear
+* Errors (residuals) are normally distributed
+* Homoskedastic errors
+  - constant variance (spread of values at each x should be similar)
