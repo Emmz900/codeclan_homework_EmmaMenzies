@@ -1,0 +1,76 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# 1. MVP
+
+## Load the data
+```{r}
+library(tidyverse)
+library(GGally)
+library(ggfortify)
+housing_prices <- read_csv("data/housing_prices.csv")
+```
+## Total rooms vs total bedrooms
+```{r}
+ggpairs(housing_prices, columns = c("total_rooms", "total_bedrooms"))
+```
+```{r}
+housing_prices <- housing_prices %>% 
+  select(-total_bedrooms)
+```
+
+## All variables
+```{r message=FALSE, warning=FALSE}
+ggpairs(housing_prices)
+```
+```{r}
+housing_prices %>% 
+  ggplot(aes(median_income, median_house_value)) +
+  geom_point()
+```
+```{r}
+housing_prices %>% 
+  distinct(ocean_proximity)
+```
+4 dummy variables
+
+```{r}
+mod1 <- lm(median_house_value ~ median_income, housing_prices)
+autoplot(mod1)
+summary(mod1)
+```
+```{r}
+mod2 <-lm(median_house_value ~ median_income + ocean_proximity, housing_prices)
+autoplot(mod2)
+summary(mod2)
+summary(mod1)
+```
+
+Proximity to the ocean and median income are good predictors for the median house price.
+The residuals do have a trend suggesting this linear model is not ideal. 
+
+```{r}
+mod3 <-lm(median_house_value ~ median_income + ocean_proximity + total_rooms, housing_prices)
+autoplot(mod3)
+summary(mod3)
+summary(mod2)
+```
+
+# 2. Extension
+
+Try adding an interaction between log(median_income) and your chosen categorical predictor. Do you think this interaction term is statistically justified?
+
+
+Find and plot an appropriate visualisation to show the effect of this interaction
+
+?
+
+```{r}
+mod5 <-lm(median_house_value ~ log(median_income) + ocean_proximity, housing_prices)
+autoplot(mod5)
+summary(mod5)
+summary(mod5)
+```
+
