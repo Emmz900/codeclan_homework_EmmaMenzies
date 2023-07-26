@@ -54,6 +54,7 @@ The residuals do have a trend suggesting this linear model is not ideal.
 ```{r}
 mod3 <-lm(median_house_value ~ median_income + ocean_proximity + total_rooms, housing_prices)
 autoplot(mod3)
+plot(mod3)
 summary(mod3)
 summary(mod2)
 ```
@@ -68,9 +69,28 @@ Find and plot an appropriate visualisation to show the effect of this interactio
 ?
 
 ```{r}
-mod5 <-lm(median_house_value ~ log(median_income) + ocean_proximity, housing_prices)
+mod5 <-lm(log(median_house_value) ~ log(median_income) + ocean_proximity, housing_prices)
 autoplot(mod5)
 summary(mod5)
 summary(mod5)
 ```
+# Review
+
+How to set the reference variable
+
+data %>% 
+  mutate(category = as.factor(category),
+          category = relevel(category, ref = ""))
+
+```{r}
+grades2 <- grades %>% 
+  mutate(subject2 = as.factor(subject), .after = subject,
+         subject3 = relevel(subject2, 'english'))
+
+lm4 <- lm(final ~ assignment + subject2, grades2)
+lm5 <- lm(final ~ assignment + subject3, grades2)
+summary(lm4)
+summary(lm5)
+```
+
 
