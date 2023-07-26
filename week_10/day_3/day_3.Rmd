@@ -1,0 +1,270 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(tidyverse)
+library(janitor)
+library(ggfortify)
+library(GGally)
+library(modelr)
+```
+
+
+```{r}
+prices <- read_csv("data/kc_house_data.csv")
+prices
+```
+```{r}
+glimpse(prices)
+```
+```{r}
+skimr::skim(prices)
+```
+# 1. Clean Data
+```{r}
+prices_clean <- prices %>% 
+  select(-zipcode, -sqft_living15, -sqft_lot15, -id, -date) %>% 
+  mutate(waterfront = as.logical(waterfront),
+         view = as.factor(view),
+         condition = as.factor(condition),
+         renovated = case_when(
+           yr_renovated > 0 ~ TRUE,
+           .default = FALSE
+         ),
+         basement = case_when(
+           sqft_basement > 0 ~ TRUE,
+           .default = FALSE
+         )) %>% 
+  select(-yr_renovated, -sqft_basement)
+```
+
+# 2. Alias
+```{r}
+alias(lm(price ~ ., prices_clean))
+```
+# 3. Model
+
+## Round 1
+```{r message=FALSE, warning=FALSE}
+prices_clean %>% 
+  select(is.numeric) %>% 
+  select(1:6) %>% 
+  ggpairs()
+
+prices_clean %>% 
+  select(is.numeric) %>% 
+  select(1, 7:11) %>% 
+  ggpairs()
+
+prices_clean %>% 
+  select(1, !is.numeric) %>% 
+  ggpairs()
+```
+Correlations with price:
+
+* sqft_living   0.702
+* grade         0.667
+* sqft_above    0.606
+* bathrooms     0.525
+* bedrooms      0.308
+* lat           0.307
+* floors        0.257
+* waterfront    ?
+
+```{r}
+mod1a <- lm(price ~ sqft_living, prices_clean)
+mod1b <- lm(price ~ grade, prices_clean)
+mod1c <- lm(price ~ sqft_above, prices_clean)
+autoplot(mod1a)
+autoplot(mod1b)
+autoplot(mod1c)
+```
+
+```{r}
+summary(mod1a)
+summary(mod1b)
+summary(mod1c)
+```
+
+The residuals vs fitted is best for c (sqft_above), but this has a much poorer adjusted R^2 than the other models.  
+Sqft_living has the highest correlation and a good R^2.
+
+## Round 2
+
+```{r}
+prices_resid <- prices_clean %>% 
+  add_residuals(mod1a) %>% 
+  select(-price, -sqft_living)
+```
+
+```{r message=FALSE, warning=FALSE}
+prices_resid %>% 
+  select(is.numeric) %>% 
+  select(1:4, 10) %>% 
+  ggpairs()
+
+prices_resid %>% 
+  select(is.numeric) %>% 
+  select(5:10) %>% 
+  ggpairs()
+
+prices_resid %>% 
+  select(15, !is.numeric) %>% 
+  ggpairs()
+```
+Correlations:
+
+* waterfront
+* renovated
+* basement
+* lat
+* year_built
+
+```{r}
+mod2a <- lm(price ~ sqft_living + waterfront, prices_clean)
+mod2b <- lm(price ~ sqft_living + renovated, prices_clean)
+mod2c <- lm(price ~ sqft_living + basement, prices_clean)
+mod2d <- lm(price ~ sqft_living + lat, prices_clean)
+autoplot(mod2a)
+autoplot(mod2b)
+autoplot(mod2c)
+autoplot(mod2d)
+```
+```{r}
+plot(mod2a)
+```
+```{r}
+prices_clean %>% 
+  #slice(3915)
+  #slice(7253)
+  #slice(9255)
+  slice_max(price, n = 10)
+```
+
+```{r}
+summary(mod2a)
+summary(mod2b)
+summary(mod2c)
+summary(mod2d)
+```
+```{r}
+anova(mod1a, mod2a)
+anova(mod1a, mod2d)
+```
+Either a(waterfront) or d(lat) would be a good addition. lat seems to improve the model slightly more than waterfront so may be a good one to take forward. The residuals vs leverage for a is alos a little weird.
+
+## Round 3
+
+```{r}
+prices_resid <- prices_clean %>% 
+  add_residuals(mod2d) %>% 
+  select(-price, -sqft_living, -lat)
+```
+
+```{r message=FALSE, warning=FALSE}
+prices_resid %>% 
+  select(is.numeric) %>% 
+  select(1:4, 9) %>% 
+  ggpairs()
+
+prices_resid %>% 
+  select(is.numeric) %>% 
+  select(5:9) %>% 
+  ggpairs()
+
+prices_resid %>% 
+  select(14, !is.numeric) %>% 
+  ggpairs()
+```
+Correlations:
+
+* waterfront
+* view?
+* yr_built
+
+```{r}
+prices_clean %>% 
+  filter(bedrooms > 30)
+```
+33 bedrooms with less than 2 bathrooms, on only 1 floor?? Surely not....
+
+```{r}
+mod3a <- lm(price ~ sqft_living + lat + waterfront, prices_clean)
+mod3b <- lm(price ~ sqft_living + lat + view, prices_clean)
+mod3c <- lm(price ~ sqft_living + lat + yr_built, prices_clean)
+```
+
+```{r}
+autoplot(mod3a)
+autoplot(mod3b)
+autoplot(mod3c)
+```
+
+```{r}
+summary(mod3a)
+summary(mod3b)
+summary(mod3c)
+```
+
+```{r}
+anova(mod2d, mod3b)
+anova(mod2d, mod3a)
+```
+
+View appears to be the best predictor to add next
+
+## Round 4
+
+```{r}
+prices_resid <- prices_clean %>% 
+  add_residuals(mod2d) %>% 
+  select(-price, -sqft_living, -lat, -view)
+```
+
+```{r message=FALSE, warning=FALSE}
+prices_resid %>% 
+  #select(is.numeric) %>% 
+  select(1:6, 13) %>% 
+  ggpairs()
+
+prices_resid %>% 
+  #select(is.numeric) %>% 
+  select(7:13) %>% 
+  ggpairs()
+
+# prices_resid %>% 
+#   select(14, !is.numeric) %>% 
+#   ggpairs()
+```
+Correlations:
+
+* yr_built
+* grade
+* waterfront
+* long
+
+```{r}
+mod4a <- lm(price ~ sqft_living + lat + view + yr_built, prices_clean)
+mod4b <- lm(price ~ sqft_living + lat + view + grade, prices_clean)
+mod4c <- lm(price ~ sqft_living + lat + view + waterfront, prices_clean)
+```
+
+```{r}
+autoplot(mod4a)
+autoplot(mod4b)
+autoplot(mod4c)
+```
+
+```{r}
+summary(mod4a)
+summary(mod4b)
+summary(mod4c)
+```
+
+```{r}
+anova(mod3b, mod4b)
+```
+
+Final model: price ~ sqft_living + lat + view + grade
