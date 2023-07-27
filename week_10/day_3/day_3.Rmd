@@ -219,7 +219,7 @@ View appears to be the best predictor to add next
 
 ```{r}
 prices_resid <- prices_clean %>% 
-  add_residuals(mod2d) %>% 
+  add_residuals(mod3b) %>% 
   select(-price, -sqft_living, -lat, -view)
 ```
 
@@ -268,3 +268,90 @@ anova(mod3b, mod4b)
 ```
 
 Final model: price ~ sqft_living + lat + view + grade
+
+
+# Review
+
+## Skewed data and transformations
+* Right skewed data can often be log transformed to create a more normal distribution. This can be better for the model.
+Data bounded by 0 tends to be right skewed, eg. price
+
+```{r}
+prices_clean %>% 
+  ggplot(aes(price)) +
+  geom_histogram() +
+  scale_x_continuous(trans = "log10")
+
+prices_log <- prices_clean %>% 
+  mutate(ln_house_price = log(price),
+         ln_sqft_living = log(sqft_living))
+```
+
+```{r}
+mod1log <- lm(ln_house_price ~ sqft_living, prices_log)
+mod1a <- lm(price ~ sqft_living, prices)
+
+summary(mod1log)
+summary(mod1a)
+```
+* Could calculate ratios and use these as variables
+
+## Factoring
+* Grade should be factored. We should consider whether there is a linear relationship between grade and price (ie. is grade 10 twice as good as grade 5?)
+
+```{r}
+prices_clean %>% 
+  ggplot(aes(grade, price)) +
+  geom_point()
+```
+```{r}
+prices_clean %>%
+  mutate(grade = as.factor(grade)) %>% 
+  ggplot(aes(grade, price)) +
+  geom_boxplot()
+```
+```{r}
+prices_clean %>% 
+  #mutate(floors = as.factor(floors)) %>% 
+  ggplot(aes(floors, price)) +
+  geom_point()
+  #geom_boxplot()
+```
+
+```{r}
+prices_factored <- prices_clean %>% 
+  mutate(grade = as.factor(grade))
+
+mod2fac <- lm(price ~ grade, prices_factored)
+mod2unfac <- lm(price ~ grade, prices_clean)
+
+summary(mod2fac)
+summary(mod2unfac)
+```
+## ggpairs
+```{r}
+#ggpairs(prices_clean, progress = FALSE) # This removes the text without altering the code chunk settings
+#ggsave("ggpairs_1.png", width = 15, height = 15) # You can set dimensions for images
+```
+
+## Diagnostics
+
+* If not all of a categorical variable are significant:
+  - you could group categories if this has a real world justification
+  - ANOVA
+
+```{r}
+mod1 <- lm(price ~ sqft_above, prices_factored)
+mod2 <-lm(price ~ sqft_above + grade, prices_factored)
+
+summary(mod2)
+```
+```{r}
+anova(mod1, mod2)
+```
+The whole of grade is significant and is an improvement even through not every individual grade is significant.
+
+* We see a cone in residuals vs fitted. A log transform may help. When modelling factored grades we get groups, we want to avoid this too. We may need to add more variables to account for the differences better.
+* Q-Q plot. There is asymmetry and a large variation from the diagonal line. This may indicate a log transformation is needed as well.
+* Scale-location = how wrong? We do not want this diagonal line
+* If the diagnostic plots fail - we may need to add more variables, not ditch the whole model! The question is - is this model ready?
