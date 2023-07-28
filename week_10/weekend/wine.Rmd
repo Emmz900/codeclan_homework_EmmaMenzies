@@ -1,0 +1,403 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Libraries
+```{r}
+library(tidyverse)
+library(janitor)
+library(GGally)
+library(ggfortify)
+library(modelr)
+library(caret)
+```
+
+# Data
+```{r}
+red_wine <- read_csv("data/wine_quality_red.csv")
+white_wine <- read_csv("data/wine_quality_white.csv")
+```
+# Exploration
+
+## Red Wine
+```{r}
+glimpse(red_wine)
+```
+Thoughts and findings:
+
+* wine_id is not needed
+* what is the difference between the acidities? Are these related to citric acid conc? Maybe only one is needed?
+* is there an interaction with sulfur dioxides? Perhaps a ratio of free:total would be interesting
+* Density is related to sugar and alcohol according to the dictionary
+
+```{r}
+red_wine <- red_wine %>% 
+  select(-wine_id) %>% 
+  mutate(prop_sulfur_dioxide = free_sulfur_dioxide / total_sulfur_dioxide,
+         acidity_ratio = citric_acid / volatile_acidity)
+```
+
+```{r}
+skimr::skim(red_wine) %>%  View()
+```
+
+Could be transformed: residual_sugar, chloride, sulfur_dioxide, sulfates, alcohol?
+
+```{r message=FALSE}
+red_wine %>% 
+  select(1:3, acidity_ratio, 6:7, sulphates, prop_sulfur_dioxide, quality) %>% 
+  ggpairs()
+```
+```{r message=FALSE}
+red_wine %>% 
+  select(4:5, 8:13) %>% 
+  ggpairs()
+```
+```{r}
+red_wine %>% 
+  ggplot(aes(region, quality)) +
+  geom_boxplot()
+```
+
+* alcohol            0.454
+* volatile_acidity  -0.364
+* acidity_ratio      0.295
+* sulfates           0.230
+* prop_sulfur        0.183
+* density           -0.169
+
+
+## White wine
+```{r}
+skimr::skim(white_wine) %>%  View()
+```
+
+```{r}
+white_wine <- white_wine %>% 
+  select(-wine_id) %>% 
+  mutate(prop_sulfur_dioxide = free_sulfur_dioxide / total_sulfur_dioxide,
+         acidity_ratio = citric_acid / volatile_acidity)
+```
+
+Test train split
+```{r}
+n_data <- nrow(white_wine)
+test_prop <- 0.2
+test_index <- sample(1:n_data, n_data * test_prop)
+
+test <- slice(white_wine, test_index)
+train <- slice(white_wine, -test_index)
+```
+
+
+```{r message=FALSE}
+train %>% 
+  select(1:3, acidity_ratio, 6:7, prop_sulfur_dioxide, sulphates, quality) %>% 
+  ggpairs()
+
+train %>% 
+  select(4:5, 8:9, alcohol, region, quality) %>% 
+  ggpairs()
+```
+
+Quality and:
+
+* alcohol                0.422
+* density               -0.297
+* chlorides             -0.201
+* volatile_acids        -0.182
+* total_sulfur_dioxide   0.176
+
+## Conclusions
+
+Red:
+* alcohol            0.454
+* volatile_acidity  -0.364
+* acidity_ratio      0.295
+* sulfates           0.230
+* prop_sulfur        0.183
+* density           -0.169
+
+White
+* alcohol                0.422
+* density               -0.297
+* chlorides             -0.201
+* volatile_acids        -0.182
+* total_sulfur_dioxide   0.176
+
+Red and white wine quality have different correlations with predictors, that is, different things make red or white wine "good".   
+Two separate models would therefore be better than trying to combine them into a single model.
+
+# Red model
+
+## Round 1
+```{r}
+mod_red1a <- lm(quality ~ alcohol, red_wine)
+mod_red1b <- lm(quality ~ volatile_acidity, red_wine)
+
+summary(mod_red1a)
+summary(mod_red1b)
+```
+```{r}
+autoplot(mod_red1a)
+autoplot(mod_red1b)
+```
+Diagnostics are ok. There is perhaps a slight pattern to mod_red1a in residuals vs fitted.
+
+mod_red1a has the better r-squared, as expected due to the high correlation. **alcohol is first predictor**
+
+## Round 2
+```{r message=FALSE}
+red_wine_resids <- red_wine %>% 
+  add_residuals(mod_red1a) %>% 
+  select(-quality, -alcohol)
+
+ggpairs(red_wine_resids, columns = c(1:7, 14))
+ggpairs(red_wine_resids, columns = c(8:14))
+```
+
+* volatile_acidity
+* acidity_ratio
+* sulphates
+
+```{r}
+mod_red2a <- lm(quality ~ alcohol + volatile_acidity, red_wine)
+mod_red2b <- lm(quality ~ alcohol + acidity_ratio, red_wine)
+mod_red2c <- lm(quality ~ alcohol + sulphates, red_wine)
+
+
+summary(mod_red2a)
+summary(mod_red2b)
+summary(mod_red2c)
+```
+```{r}
+autoplot(mod_red2a)
+autoplot(mod_red2b)
+autoplot(mod_red2c)
+```
+mod_red2a has the best increase in adjusted r-squared as well as the best diagnostics. **volatile_acidity is best second predictor**
+
+## Round 3
+```{r message = FALSE}
+red_wine_resids <- red_wine %>% 
+  add_residuals(mod_red2a) %>% 
+  select(-quality, -alcohol, -volatile_acidity)
+
+ggpairs(red_wine_resids, columns = c(1:6, 13))
+ggpairs(red_wine_resids, columns = c(7:13))
+```
+* sulphates       0.140
+* total_sulfur    -0.093
+* pH / prop       -0.076
+
+```{r}
+mod_red3a <- lm(quality ~ alcohol + volatile_acidity + sulphates, red_wine)
+mod_red3b <- lm(quality ~ alcohol + volatile_acidity + total_sulfur_dioxide, red_wine)
+mod_red3c <- lm(quality ~ alcohol + volatile_acidity + p_h, red_wine)
+mod_red3d <- lm(quality ~ alcohol + volatile_acidity + prop_sulfur_dioxide, red_wine)
+
+summary(mod_red3a)
+summary(mod_red3b)
+summary(mod_red3c)
+summary(mod_red3d)
+```
+
+```{r}
+autoplot(mod_red3a)
+autoplot(mod_red3b)
+autoplot(mod_red3c)
+autoplot(mod_red3d)
+```
+```{r}
+anova(mod_red2a, mod_red3a)
+```
+
+
+### Quality of model
+
+*(You can't use autoplot on K-fold models. Should you be using this method from the start anyway and look at diagnostics a different way, or can it be used as a check at the end?)*
+
+```{r}
+cv_10_fold <- trainControl(
+  method = "cv",
+  number = 10,
+  savePredictions = TRUE
+)
+```
+
+```{r}
+mod_red1 <- train(quality ~ alcohol, 
+               data = red_wine,
+               trControl = cv_10_fold,
+               method = "lm")
+
+mod_red2 <- train(quality ~ alcohol + volatile_acidity, 
+               data = red_wine,
+               trControl = cv_10_fold,
+               method = "lm")
+
+mod_red3 <- train(quality ~ alcohol + volatile_acidity + sulphates, 
+               data = red_wine,
+               trControl = cv_10_fold,
+               method = "lm")
+
+summary(mod_red1)
+summary(mod_red2)
+summary(mod_red3)
+```
+
+```{r}
+mean(mod_red1$resample$RMSE)
+mean(mod_red2$resample$RMSE)
+mean(mod_red3$resample$RMSE)
+```
+```{r}
+BIC(mod_red1a)
+BIC(mod_red2a)
+BIC(mod_red3a)
+```
+## Round 4
+```{r message=FALSE}
+red_wine_resids <- red_wine %>% 
+  add_residuals(mod_red3a) %>% 
+  select(-quality, -alcohol, -volatile_acidity, -sulphates)
+
+ggpairs(red_wine_resids, columns = c(1:6, 12))
+ggpairs(red_wine_resids, columns = c(7:12))
+```
+None of the remaining predictors have particularly strong correlations, it seems unlikely that adding more are going to significantly improve the model
+
+```{r}
+mod_red4a <- lm(quality ~ alcohol + volatile_acidity + sulphates + prop_sulfur_dioxide, red_wine)
+mod_red4b <- lm(quality ~ alcohol + volatile_acidity + sulphates + total_sulfur_dioxide, red_wine)
+
+summary(mod_red3a)
+summary(mod_red4a)
+summary(mod_red4b)
+```
+
+# White model
+
+* alcohol                0.422
+* density               -0.297
+* chlorides             -0.201
+
+## Round 1
+```{r}
+mod_white1a <- lm(quality ~ alcohol, train)
+mod_white1b <- lm(quality ~ density, train)
+mod_white1c <- lm(quality ~ chlorides, train)
+
+summary(mod_white1a)
+summary(mod_white1b)
+summary(mod_white1c)
+```
+```{r}
+autoplot(mod_white1a)
+```
+Diagnostics are great.
+
+Alcohol seems to make the best model.
+
+## Round 2
+```{r message=FALSE}
+train_resid <- train %>% 
+  add_residuals(mod_white1a) %>% 
+  select(-quality, -alcohol)
+
+ggpairs(train_resid, columns = c(1:6, 14))
+ggpairs(train_resid, columns = c(7:14))
+```
+
+* volatile_acid
+* acidity ratio
+* prop sulfur
+
+```{r}
+mod_white2a <- lm(quality ~ alcohol + volatile_acidity, train)
+mod_white2b <- lm(quality ~ alcohol + acidity_ratio, train)
+mod_white2c <- lm(quality ~ alcohol + prop_sulfur_dioxide, train)
+
+summary(mod_white2a)
+summary(mod_white2b)
+summary(mod_white2c)
+```
+```{r}
+autoplot(mod_white2a)
+```
+Volatile acidity is the next best predictor.
+
+## Round 3
+```{r message=FALSE}
+train_resid <- train %>% 
+  add_residuals(mod_white2a) %>% 
+  select(-quality, -alcohol, -volatile_acidity)
+
+ggpairs(train_resid, columns = c(1:6, 13))
+ggpairs(train_resid, columns = c(7:13))
+```
+
+* residual sugar
+* prop_sulfur_dioxide
+
+```{r}
+mod_white3a <- lm(quality ~ alcohol + volatile_acidity + residual_sugar, train)
+mod_white3b <- lm(quality ~ alcohol + volatile_acidity + prop_sulfur_dioxide, train)
+
+summary(mod_white3a)
+summary(mod_white3b)
+```
+```{r}
+autoplot(mod_white3a)
+autoplot(mod_white3b)
+```
+residual_sugar improves the r-squared the most and has the best correlation.
+
+## Round 4
+
+```{r message=FALSE}
+train_resid <- train %>% 
+  add_residuals(mod_white3a) %>% 
+  select(-quality, -volatile_acidity, -residual_sugar, -alcohol)
+
+ggpairs(train_resid, columns = c(1:6, 12))
+ggpairs(train_resid, columns = c(7:12))
+```
+```{r}
+mod_white4a <- lm(quality ~ alcohol + volatile_acidity + residual_sugar + prop_sulfur_dioxide, train)
+mod_white4b <- lm(quality ~ alcohol + volatile_acidity + residual_sugar + fixed_acidity, train)
+
+summary(mod_white4a)
+summary(mod_white4b)
+```
+
+```{r}
+autoplot(mod_white4a)
+```
+Looks good.
+```{r}
+anova(mod_white3a, mod_white4a)
+```
+Is it worth adding any more?
+
+## Round 5
+```{r message=FALSE}
+train_resid <- train %>% 
+  add_residuals(mod_white4a) %>% 
+  select(-quality, -volatile_acidity, -residual_sugar, -alcohol, -prop_sulfur_dioxide)
+
+ggpairs(train_resid, columns = c(1:5, 11))
+ggpairs(train_resid, columns = c(6:11))
+```
+```{r}
+mod_white5a <- lm(quality ~ alcohol + volatile_acidity + 
+                    residual_sugar + prop_sulfur_dioxide + fixed_acidity, train)
+mod_white5b <- lm(quality ~ alcohol + volatile_acidity + 
+                    residual_sugar + prop_sulfur_dioxide + p_h, train)
+
+summary(mod_white5a)
+summary(mod_white5b)
+```
+
+**Best so far - mod_white5b: lm(formula = quality ~ alcohol + volatile_acidity + residual_sugar + prop_sulfur_dioxide + p_h, data = train)**
