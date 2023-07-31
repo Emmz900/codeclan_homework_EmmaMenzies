@@ -68,7 +68,7 @@ red_wine %>%
 * density           -0.169
 
 
-## White wine
+## White Wine
 ```{r}
 #skimr::skim(white_wine) %>%  View()
 ```
@@ -80,7 +80,7 @@ white_wine <- white_wine %>%
          acidity_ratio = citric_acid / volatile_acidity)
 ```
 
-Test train split (for red wine I will try k-fold validation and here train test split to compare and try both methods)
+Test train split (for red wine I will try k-fold validation and here train test split to compare and try both methods) (should have done first!)
 ```{r}
 n_data <- nrow(white_wine)
 test_prop <- 0.2
