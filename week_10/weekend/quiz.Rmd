@@ -1,0 +1,38 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# 1. I want to predict how well 6 year-olds are going to do in their final school exams. Using the following variables am I likely under-fitting, fitting well or over-fitting? Postcode, gender, reading level, score in maths test, date of birth, family income.
+
+**Well fitting/potentially slightly overfitting**
+
+They almost all seem intuitively like they could be important predictors of final grades. Date of birth seems less likely to be important, particularly as we know they are all 6. This could cause a bit of overfitting to the noise (ie. variation in date of birth) in the sample.
+
+# 2. If I have two models, one with an AIC score of 34,902 and the other with an AIC score of 33,559 which model should I use?
+
+A lower AIC score is better, therefore the model with the AIC score of **33,559** would likely be a better choice.
+
+# 3. I have two models, the first with: r-squared: 0.44, adjusted r-squared: 0.43. The second with: r-squared: 0.47, adjusted r-squared: 0.41. Which one should I use?
+
+Although the second model has a higher r-squared than the first, the adjusted r-squared is actually lower suggesting overfitting. The **first model** would therefore be the preferred model.
+
+# 4. I have a model with the following errors: RMSE error on test set: 10.3, RMSE error on training data: 10.4. Do you think this model is over-fitting?
+
+**No** as the RMSE does not significantly change between the training and test set. If the model was overfitting you would expect a much lower RMSE with the training data, and a much higher RMSE with the test set.
+
+# 5. How does k-fold validation work?
+
+It splits the data into several (k) "folds". K models are then made with a different fold being the test set each time. This can be used to ensure the model is not overfitting and is more likely to be suitable for unseen data.
+
+# 6. What is a validation set? When do you need one?
+
+A validation set is a further set (alongside training and test sets) of the data which is not looked at during training or testing. It can be used after testing as a further check that the model is suitable to use with new data.
+
+# 7. Describe how backwards selection works.
+
+It is based on a step-wise approach to model building where you start with all the variables in the model. Variables are then removed step by step, starting with the least useful, until the model is deemed suitable.
+
+# 8. Describe how best subset selection works.
+
+This approach tests all possible combinations of the variables to identify the single best combination for the model.

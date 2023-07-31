@@ -22,7 +22,7 @@ white_wine <- read_csv("data/wine_quality_white.csv")
 
 ## Red Wine
 ```{r}
-glimpse(red_wine)
+#glimpse(red_wine)
 ```
 Thoughts and findings:
 
@@ -39,7 +39,7 @@ red_wine <- red_wine %>%
 ```
 
 ```{r}
-skimr::skim(red_wine) %>%  View()
+#skimr::skim(red_wine) %>%  View()
 ```
 
 Could be transformed: residual_sugar, chloride, sulfur_dioxide, sulfates, alcohol?
@@ -70,7 +70,7 @@ red_wine %>%
 
 ## White wine
 ```{r}
-skimr::skim(white_wine) %>%  View()
+#skimr::skim(white_wine) %>%  View()
 ```
 
 ```{r}
@@ -80,7 +80,7 @@ white_wine <- white_wine %>%
          acidity_ratio = citric_acid / volatile_acidity)
 ```
 
-Test train split
+Test train split (for red wine I will try k-fold validation and here train test split to compare and try both methods)
 ```{r}
 n_data <- nrow(white_wine)
 test_prop <- 0.2
@@ -277,6 +277,17 @@ summary(mod_red4a)
 summary(mod_red4b)
 ```
 
+Adding total_sulphur_dioxide is the best improvement
+
+```{r}
+anova(mod_red3a, mod_red4b)
+```
+```{r}
+BIC(mod_red3a)
+BIC(mod_red4b)
+```
+Statistical improvement and no evidence of overfitting. Should have done k-fold here instead to check model.
+
 # White model
 
 * alcohol                0.422
@@ -401,3 +412,69 @@ summary(mod_white5b)
 ```
 
 **Best so far - mod_white5b: lm(formula = quality ~ alcohol + volatile_acidity + residual_sugar + prop_sulfur_dioxide + p_h, data = train)**
+```{r}
+BIC(mod_white4a)
+BIC(mod_white5b)
+```
+Model 5 does not appear to be overfitting. 
+
+```{r}
+anova(mod_white4a, mod_white5b)
+```
+It is a significant improvement.
+
+## Round 6
+This is already a lot of variables, and perhaps one from each related field (eg. acidity/sulphur etc). It is important not to overfit the model.
+
+```{r message=FALSE}
+train_resid <- train %>% 
+  add_residuals(mod_white5b) %>% 
+  select(-quality, -volatile_acidity, -residual_sugar, -alcohol, -prop_sulfur_dioxide, -p_h)
+
+ggpairs(train_resid, columns = c(1:5, 10))
+ggpairs(train_resid, columns = c(6:10))
+```
+The correlation with the residuals are low. There are some interesting patterns in the plots such as fixed_acidity/chlorides and chlorides/total_sulfur_dioxide.
+```{r}
+coplot(quality ~ chlorides | total_sulfur_dioxide,
+       data = train,
+       rows = 1,
+       panel = function(x, y, ...){
+         points(x, y)
+         abline(lm(y ~ x), col = "blue")
+       })
+```
+
+The interactions are not clear. 
+
+## Test
+Lets test the model
+
+```{r}
+predictions_test_5 <- test %>% 
+  add_predictions(mod_white5b) %>% 
+  select(quality, pred)
+predictions_test_5
+
+mse_test_5 <- predictions_test_5 %>% 
+  mutate(error = quality - pred) %>% 
+  summarise(mse = mean(error ** 2),
+            rmse = mse ** 0.5)
+
+mse_test_5
+```
+
+```{r}
+predictions_test_4 <- test %>% 
+  add_predictions(mod_white4a) %>% 
+  select(quality, pred)
+predictions_test_4
+
+mse_test_4 <- predictions_test_4 %>% 
+  mutate(error = quality - pred) %>% 
+  summarise(mse = mean(error ** 2),
+            rmse = mse ** 0.5)
+mse_test_4
+```
+
+Model 4 actually does a slightly better job on the unseen data. Both are pretty good though.
