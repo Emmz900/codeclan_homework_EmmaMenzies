@@ -412,6 +412,7 @@ summary(mod_white5b)
 ```
 
 **Best so far - mod_white5b: lm(formula = quality ~ alcohol + volatile_acidity + residual_sugar + prop_sulfur_dioxide + p_h, data = train)**
+
 ```{r}
 BIC(mod_white4a)
 BIC(mod_white5b)
@@ -424,6 +425,7 @@ anova(mod_white4a, mod_white5b)
 It is a significant improvement.
 
 ## Round 6
+
 This is already a lot of variables, and perhaps one from each related field (eg. acidity/sulphur etc). It is important not to overfit the model.
 
 ```{r message=FALSE}
