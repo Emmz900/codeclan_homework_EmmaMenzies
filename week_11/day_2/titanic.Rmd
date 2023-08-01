@@ -1,0 +1,203 @@
+---
+title: "Week 11, day 2 - titanic"
+output: html_notebook
+---
+
+# Data and libraries
+```{r}
+library(rpart)
+library(rpart.plot)
+library(tidyverse)
+library(ranger)
+library(janitor)
+library(modelr)
+library(caret)
+
+
+titanic_set <- read_csv('data/titanic_decision_tree_data.csv')
+
+shuffle_index <- sample(1:nrow(titanic_set))
+
+# shuffle the data so class order isn't in order - need this for training/testing split later on 
+titanic_set <- titanic_set[shuffle_index, ]
+```
+
+# 1. Cleaning
+```{r}
+titanic_clean <- titanic_set %>% 
+  select(-...1, -passenger_id, -name, -ticket, -fare, -cabin) %>% 
+  filter(!is.na(survived)) %>% 
+  mutate(sex = factor(sex),
+         pclass = factor(pclass),
+         embarked = factor(embarked),
+         survived = factor(survived),
+         age_status = factor(if_else(age <= 16, "child", "adult"))) %>% 
+  drop_na()
+  
+```
+# 2. Exploration
+```{r message=FALSE, warning=FALSE}
+titanic_clean %>% 
+  GGally::ggpairs()
+```
+
+* pclass
+* sex
+* age_status/age
+* embarked?
+
+# 3. Test-train split
+
+```{r}
+n_data <- nrow(titanic_clean)
+
+test_index <- sample(1:n_data, size = n_data * 0.2)
+
+titanic_train <- slice(titanic_clean, test_index)
+titanic_test <- slice(titanic_clean, -test_index)
+```
+
+```{r}
+titanic_train %>% 
+  tabyl(survived)
+
+titanic_test %>% 
+  tabyl(survived)
+```
+Since there is not a particularly high volume of data, a higher test train splot is liekly preffered, hence 80:20 was chosen here.
+The test and train datasets are fairly well balanced.
+
+# 4. Model
+```{r}
+titanic_tree_1 <- rpart(
+  survived ~ .,
+  titanic_train,
+  method = "class"
+)
+
+rpart.plot(
+  titanic_tree_1,
+  yesno = 2, 
+  type = 2,
+  fallen.leaves = TRUE, 
+  faclen = 6, 
+  digits = 2
+)
+```
+
+# 5. Findings:
+
+* The majority of people did not survive 
+  - probability of surviving was 0.4
+* The most significant factor affecting survivability was sex
+  - for males, the probability of surviving was 0.22
+  - for females, the probability of surviving was 0.78
+* For males, the most significant factor was age, the key age being 13
+  - the probability of surviving if a male was over 13 was 0.18
+  - the probability of surviving if a male was under 13 was 0.71
+  - i.e. male children were much more likely to survive than male adults
+* For females, the most significant factor was class
+  - first and second class women had a survival probability of 0.97
+  - third class women had a survival probability of 0.47
+  - i.e. women from a higher class were more likely to survive
+  
+# 6. Test the model
+
+```{r}
+titanic_test_pred <- titanic_test %>% 
+  add_predictions(titanic_tree_1, type = "class")
+
+titanic_test_pred %>% 
+  tabyl(survived, pred)
+```
+True Positives = 136
+True Negatives = 317
+False Positives = 22
+False Negatives = 95
+
+```{r}
+cat("Sensitivity (TPR): ", 136/(136+22), "\nSpecificity (TNR): ", 317/(317+95))
+```
+Our model has a high sensitivity (86%). This indicates that it is good at correctly identifying those that survived.
+It also has a fairly good specificity (77%). This indicates it is pretty good at correctly identifying those that died, but not as well as it can predict those that survived.
+
+# 2. Extension
+
+```{r}
+rf_classifier <- ranger(
+  formula = survived ~ .,
+  data = titanic_train,
+  importance = "impurity",
+  num.trees = 1000,
+  mtry = 2, 
+  min.node.size = 5
+)
+
+importance(rf_classifier)
+```
+It identifies sex > age > pclass > embarked.... This matches our single tree.
+
+```{r}
+titanic_test_pred_rf <- titanic_test %>% 
+  mutate(pred = predict(rf_classifier, titanic_test)$predictions)
+
+conf_mat_rf <- titanic_test_pred_rf %>% 
+  tabyl(survived, pred)
+
+conf_mat_rf
+```
+This is an improvement.
+
+```{r}
+control <- trainControl(
+  method = "repeatedcv", 
+  number = 5, 
+  repeats = 10
+)
+
+tune_grid <- expand.grid(mtry = 1:6, splitrule = c("gini", "extratrees"),
+                         min.node.size = 1:8)
+
+rf_tune <- train(
+  survived ~ ., 
+  data = titanic_train, 
+  method = "ranger",
+  metric = "Kappa",
+  num.trees = 1000,
+  importance = "impurity",
+  tuneGrid = tune_grid, 
+  trControl = control
+)
+
+rf_tune
+```
+
+Best model: mtry = 2, splitrule = extratrees and min.node.size = 1
+min.node.size = 1 feels like it might cause overfitting.
+
+```{r}
+rf_classifier_2 <- ranger(
+  formula = survived ~ .,
+  data = titanic_train,
+  importance = "impurity",
+  num.trees = 1000,
+  mtry = 2, 
+  splitrule = "extratrees",
+  min.node.size = 1
+)
+
+importance(rf_classifier_2)
+```
+Class is now more important than age.
+
+```{r}
+titanic_test_pred_rf_2 <- titanic_test %>% 
+  mutate(pred = predict(rf_classifier_2, titanic_test)$predictions)
+
+conf_mat_rf_2 <- titanic_test_pred_rf_2 %>% 
+  tabyl(survived, pred)
+
+conf_mat_rf
+conf_mat_rf_2
+```
+
