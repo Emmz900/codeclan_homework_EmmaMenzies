@@ -53,8 +53,8 @@ n_data <- nrow(titanic_clean)
 
 test_index <- sample(1:n_data, size = n_data * 0.2)
 
-titanic_train <- slice(titanic_clean, test_index)
-titanic_test <- slice(titanic_clean, -test_index)
+titanic_train <- slice(titanic_clean, -test_index)
+titanic_test <- slice(titanic_clean, test_index)
 ```
 
 ```{r}
@@ -88,18 +88,26 @@ rpart.plot(
 # 5. Findings:
 
 * The majority of people did not survive 
-  - probability of surviving was 0.4
+  - probability of surviving was 0.41
 * The most significant factor affecting survivability was sex
-  - for males, the probability of surviving was 0.22
-  - for females, the probability of surviving was 0.78
-* For males, the most significant factor was age, the key age being 13
-  - the probability of surviving if a male was over 13 was 0.18
-  - the probability of surviving if a male was under 13 was 0.71
-  - i.e. male children were much more likely to survive than male adults
+  - for males, the probability of surviving was 0.21
+  - for females, the probability of surviving was 0.73
+* For males, the most significant factor was age, the key age being 14
+  - the probability of surviving if a male was at lease 14 was 0.17
+  - if a male was under 14 the number of siblings was a key factor
+  - for male children with at least three siblings there was no chance of survival
+  - for male children with less than three siblings they were guaranteed to survive
+  - i.e. male children with few siblings were much more likely to survive than male adults
 * For females, the most significant factor was class
-  - first and second class women had a survival probability of 0.97
-  - third class women had a survival probability of 0.47
-  - i.e. women from a higher class were more likely to survive
+  - first and second class women had a survival probability of 0.93
+  - for third class women had a survival probability of 0.46
+  - the biggest factor for third class women was age
+  - women at least 39 were very unlikely to survive (0.08)
+  - females under 5 had a survival prob of 0.77
+  - females between 5-11 had a survival prob of 0 (??)
+  - females between 12 and 16 has a survival prob of 0.75
+  - women between 17 and 39 with children or parents were more likely to survive than those without (0.67 compared to 0.43)
+  - i.e. women from a higher class were more likely to survive, age was an important factor for third class women
   
 # 6. Test the model
 
@@ -110,16 +118,16 @@ titanic_test_pred <- titanic_test %>%
 titanic_test_pred %>% 
   tabyl(survived, pred)
 ```
-True Positives = 136
-True Negatives = 317
-False Positives = 22
-False Negatives = 95
+True Positives = 39
+True Negatives = 78
+False Positives = 7
+False Negatives = 18
 
 ```{r}
-cat("Sensitivity (TPR): ", 136/(136+22), "\nSpecificity (TNR): ", 317/(317+95))
+cat("Sensitivity (TPR): ", 39/(39+7), "\nSpecificity (TNR): ", 78/(78+18))
 ```
-Our model has a high sensitivity (86%). This indicates that it is good at correctly identifying those that survived.
-It also has a fairly good specificity (77%). This indicates it is pretty good at correctly identifying those that died, but not as well as it can predict those that survived.
+Our model has a high sensitivity (85%). This indicates that it is good at correctly identifying those that survived.
+It also has a good specificity (81%). This indicates it is good at correctly identifying those that died, but not as well as it can predict those that survived.
 
 # 2. Extension
 
@@ -135,7 +143,7 @@ rf_classifier <- ranger(
 
 importance(rf_classifier)
 ```
-It identifies sex > age > pclass > embarked.... This matches our single tree.
+It identifies sex > age > pclass > sib_sp.... This matches our single tree.
 
 ```{r}
 titanic_test_pred_rf <- titanic_test %>% 
@@ -146,7 +154,6 @@ conf_mat_rf <- titanic_test_pred_rf %>%
 
 conf_mat_rf
 ```
-This is an improvement.
 
 ```{r}
 control <- trainControl(
@@ -172,8 +179,7 @@ rf_tune <- train(
 rf_tune
 ```
 
-Best model: mtry = 2, splitrule = extratrees and min.node.size = 1
-min.node.size = 1 feels like it might cause overfitting.
+Best model: mtry = 2, splitrule = gini and min.node.size = 8
 
 ```{r}
 rf_classifier_2 <- ranger(
@@ -182,13 +188,13 @@ rf_classifier_2 <- ranger(
   importance = "impurity",
   num.trees = 1000,
   mtry = 2, 
-  splitrule = "extratrees",
-  min.node.size = 1
+  splitrule = "gini",
+  min.node.size = 8
 )
 
 importance(rf_classifier_2)
 ```
-Class is now more important than age.
+Slightly different importances
 
 ```{r}
 titanic_test_pred_rf_2 <- titanic_test %>% 
@@ -197,7 +203,9 @@ titanic_test_pred_rf_2 <- titanic_test %>%
 conf_mat_rf_2 <- titanic_test_pred_rf_2 %>% 
   tabyl(survived, pred)
 
+titanic_test_pred %>% 
+  tabyl(survived, pred)
 conf_mat_rf
 conf_mat_rf_2
 ```
-
+It is only 1 data point better than our non-optimized forest, and our single tree.
