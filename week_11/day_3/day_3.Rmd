@@ -1,0 +1,109 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Libraries
+```{r}
+library(tidyverse)
+# library(cluster)
+library(factoextra)
+# library(dendextend)
+```
+# Data
+```{r}
+customers <- janitor::clean_names(read_csv("data/mall_customers.csv"))
+```
+# Task 1. Explore
+```{r}
+glimpse(customers)
+```
+
+```{r}
+customers_clean <- customers %>% 
+  select(-customer_id) %>% 
+  mutate(across(where(is.numeric), scale)) %>% 
+  rename("spending_score"= spending_score_1_100)
+```
+
+```{r}
+customers_clean %>% 
+  ggplot(aes(age,
+             spending_score#,
+             #colour = gender
+  )) +
+  geom_point()
+```
+Perhaps 2-4 groups, gender does not seem to play a significant part in this.
+```{r}
+customers_clean %>% 
+  ggplot(aes(annual_income_k, spending_score)) +
+  geom_point()
+```
+There appear to be 5 clusters here.
+```{r}
+customers_clean %>% 
+  ggplot(aes(age, annual_income_k)) +
+  geom_point()
+```
+No correlation here
+
+# 2. Spending score and annual income
+
+```{r}
+customers_clean %>% 
+  ggplot(aes(annual_income_k, spending_score)) +
+  geom_point()
+```
+Based on this we can try k=5
+
+```{r}
+customers_trim <- customers_clean %>% 
+  select(annual_income_k, spending_score)
+
+mod_5_clusters <- kmeans(
+  customers_trim,
+  centers = 5,
+  nstart = 25
+)
+```
+
+# 3. Visualise
+```{r}
+customers_clustered <- customers_trim %>% 
+  mutate(cluster = factor(mod_5_clusters$cluster))
+
+customers_clustered %>% 
+  ggplot(aes(annual_income_k, spending_score, colour = cluster)) +
+  geom_point()
+```
+# 4. Is clustering good?
+
+I think this looks great.
+
+```{r}
+fviz_nbclust(customers_trim,
+             kmeans,
+             method = "silhouette",
+             nstart = 25)
+fviz_nbclust(customers_trim,
+             kmeans,
+             method = "gap_stat",
+             nstart = 25,
+             k.max = 10)
+```
+The silhouette method is in agreement that 5 is optimum but the gap method suggests this data is not great for clustering.
+
+# 5. What are the groups?
+
+```{r}
+customers_clustered %>% 
+  ggplot(aes(annual_income_k, spending_score, colour = cluster)) +
+  geom_point()
+```
+
+1. Average earners/spenders (Average)
+2. High earners/low spenders (Savers)
+3. Low earners/low spenders (Sensible poor)
+4. Low earners/high spenders (Risky poor)
+5. High earners/high spenders (Extravagant)
