@@ -1,0 +1,119 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+# Libraries
+```{r}
+library(tidyverse)
+library(GGally)
+```
+# Data
+```{r}
+juice_sales <- read_csv("data/orange_juice.csv") %>% 
+  janitor::clean_names()
+```
+```{r}
+skimr::skim(juice_sales) %>% View()
+glimpse(juice_sales)
+```
+```{r}
+juice_sales %>% 
+  distinct(store_id)
+```
+# Cleaning
+```{r}
+juice_sales_clean <- juice_sales %>% 
+  mutate(purchase_ch = factor(if_else(purchase == "CH", 1, 0)),
+         store_id = factor(store_id),
+         special_ch = factor(special_ch),
+         special_mm = factor(special_mm),
+         store7 = factor(store7),
+         store = factor(store)) %>% 
+  select(-purchase, -weekof_purchase)
+```
+
+#Exploration
+```{r message=FALSE, warning=FALSE}
+ggpairs(juice_sales_clean, columns = c(1:5, 17))
+```
+```{r message=FALSE, warning=FALSE}
+ggpairs(juice_sales_clean, columns = c(6:11, 17))
+```
+
+
+```{r message=FALSE, warning=FALSE}
+ggpairs(juice_sales_clean, columns = 12:17)
+```
+
+* store_id
+* special_ch / special_mm
+* loyal_ch
+* sale_price_mm
+* price_diff
+* list_price_diff
+
+# Model
+
+## Round 1
+
+```{r}
+mod1a <- glm(purchase_ch ~ loyal_ch, juice_sales_clean,
+            family = binomial(link = "logit"))
+mod1b <- glm(purchase_ch ~ sale_price_mm, juice_sales_clean,
+            family = binomial(link = "logit"))
+mod1c <- glm(purchase_ch ~ price_diff, juice_sales_clean,
+            family = binomial(link = "logit"))
+mod1d <- glm(purchase_ch ~ special_ch, juice_sales_clean,
+            family = binomial(link = "logit"))
+mod1e <- glm(purchase_ch ~ store_id, juice_sales_clean,
+            family = binomial(link = "logit"))
+mod_all <- glm(purchase_ch ~ ., juice_sales_clean,
+               family = binomial(link = "logit"))
+
+
+summary(mod1a)
+summary(mod1b)
+summary(mod1c)
+summary(mod1d)
+summary(mod1e)
+summary(mod_all)
+```
+
+## Round 2
+```{r}
+mod2a <- glm(purchase_ch ~ loyal_ch + price_mm, juice_sales_clean,
+            family = binomial(link = "logit"))
+mod2b <- glm(purchase_ch ~ loyal_ch + price_mm + disc_mm + store_id + price_ch + pct_disc_mm,
+             juice_sales_clean,
+            family = binomial(link = "logit"))
+summary(mod2a)
+summary(mod2b)
+```
+## Round 3
+```{r}
+mod3a <- glm(purchase_ch ~ loyal_ch + price_mm + store_id, juice_sales_clean,
+            family = binomial(link = "logit"))
+mod3b <- glm(purchase_ch ~ loyal_ch + price_mm + store7, juice_sales_clean,
+            family = binomial(link = "logit"))
+mod3c <- glm(purchase_ch ~ loyal_ch + price_mm + disc_mm + store_id + price_ch + pct_disc_mm,
+             juice_sales_clean,
+            family = binomial(link = "logit"))
+
+summary(mod3a)
+summary(mod3b)
+summary(mod3c)
+```
+## Round 4
+
+```{r}
+mod4a <- glm(purchase_ch ~ loyal_ch + price_mm + store7 + disc_mm, juice_sales_clean,
+             family = binomial(link = "logit"))
+mod4b <- glm(purchase_ch ~ loyal_ch + price_mm + disc_mm + store7 + price_ch + pct_disc_mm,
+             juice_sales_clean,
+             family = binomial(link = "logit"))
+
+summary(mod4a)
+summary(mod4b)
+```
+
